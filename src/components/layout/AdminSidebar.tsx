@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { NAV_ITEMS } from "@/lib/nav-items";
 import {
@@ -53,19 +54,16 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <div className="p-5 flex flex-col gap-4">
           {/* Header Bar with Wordmark and Close Button (Mobile) */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#1456f0] to-[#3b82f6] flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-                <Sparkles className="w-5 h-5 fill-white/20" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-display font-bold text-lg text-[#222222] tracking-tight leading-none">
-                  Mantra Assist
-                </span>
-                <span className="text-[11px] font-semibold tracking-wider text-slate-400 uppercase mt-1">
-                  Admin Portal
-                </span>
-              </div>
-            </div>
+            <Link href="/analytics" className="flex items-center py-1">
+              <Image
+                src="/ma_logo.png"
+                alt="Mantra Assist"
+                width={170}
+                height={40}
+                className="h-8 w-auto object-contain"
+                priority
+              />
+            </Link>
 
             {onClose && (
               <button
