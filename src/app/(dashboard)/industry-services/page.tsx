@@ -5,6 +5,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Pill } from "@/components/ui/Pill";
 import { SideDrawer } from "@/components/ui/SideDrawer";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 import {
   Search,
   Plus,
@@ -433,7 +434,7 @@ export default function IndustryServicesPage({ onMenuToggle }: { onMenuToggle?: 
           <div className="overflow-hidden rounded-2xl border border-white/70 bg-white/40 backdrop-blur-xs shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-white/60 border-b border-slate-200/60 text-slate-400 uppercase text-[11px] font-semibold tracking-wider">
+                <thead className="bg-white/60 border-b border-slate-200/60 text-[#181e25] uppercase text-[11px] font-bold tracking-wider">
                   <tr>
                     <th className="px-6 py-4">Service Name</th>
                     <th className="px-6 py-4">Category</th>
@@ -529,7 +530,7 @@ export default function IndustryServicesPage({ onMenuToggle }: { onMenuToggle?: 
           <div className="overflow-hidden rounded-2xl border border-white/70 bg-white/40 backdrop-blur-xs shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-white/60 border-b border-slate-200/60 text-slate-400 uppercase text-[11px] font-semibold tracking-wider">
+                <thead className="bg-white/60 border-b border-slate-200/60 text-[#181e25] uppercase text-[11px] font-bold tracking-wider">
                   <tr>
                     <th className="px-6 py-4">Industry / Category</th>
                     <th className="px-6 py-4">Description</th>
@@ -778,23 +779,14 @@ export default function IndustryServicesPage({ onMenuToggle }: { onMenuToggle?: 
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Service Category
             </label>
-            <select
+            <CustomSelect
               value={serviceForm.category}
-              onChange={(e) =>
-                setServiceForm({ ...serviceForm, category: e.target.value })
+              onChange={(val) =>
+                setServiceForm({ ...serviceForm, category: val })
               }
-              className="
-                w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
-                border border-slate-200/80 rounded-xl text-[#222222]
-                shadow-xs focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60 focus:bg-white
-              "
-            >
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+              options={categories.map((cat) => ({ value: cat.name, label: cat.name }))}
+              label="Select Category"
+            />
           </div>
 
           {/* Description */}

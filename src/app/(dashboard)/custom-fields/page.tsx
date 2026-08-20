@@ -6,6 +6,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Pill } from "@/components/ui/Pill";
 import { SideDrawer } from "@/components/ui/SideDrawer";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 import {
   SlidersHorizontal,
   Plus,
@@ -47,6 +48,243 @@ export const MODULES = [
 
 export type ModuleType = (typeof MODULES)[number];
 
+// Available Industries & Associated Services
+export const AVAILABLE_INDUSTRIES = [
+  "Healthcare",
+  "IT/Tech",
+  "Automobile",
+  "Real Estate",
+  "Coaching & Advisory",
+  "Household Care",
+  "Wellness & Lifestyle",
+] as const;
+
+export const INDUSTRY_SERVICES_MAP: Record<string, string[]> = {
+  "Healthcare": [
+    "Cardiologist",
+    "Cataract",
+    "Clinical Psychologist",
+    "Contoura Vision",
+    "Dentist",
+    "General Physician",
+  ],
+  "IT/Tech": [
+    "AI/ML Strategy/ Model Development",
+    "App Development",
+    "Automation/Workflow Consultation",
+    "Chatbot/Voice Agent Development",
+    "Cloud Migration Consultation",
+    "Cybersecurity Audit",
+  ],
+  "Automobile": [
+    "Accessory/Customization",
+    "Automobile",
+    "Car Inspection / Valuations",
+    "Test Drive Scheduling",
+  ],
+  "Real Estate": [
+    "Commercial Real Estates",
+    "Property Buying & Advisory",
+    "Property Management",
+    "Residential Leasing",
+  ],
+  "Coaching & Advisory": [
+    "Career Coaching",
+    "Executive Coaching",
+    "Financial Advisory",
+    "Life & Wellness Coaching",
+  ],
+  "Household Care": [
+    "AC Repair & Maintenance",
+    "Carpentry & Woodwork",
+    "Deep Home Cleaning",
+    "Electrical Installations",
+    "Plumbing Services",
+  ],
+  "Wellness & Lifestyle": [
+    "Fitness & Personal Training",
+    "Mindfulness & Meditation",
+    "Nutrition & Diet Planning",
+    "Yoga Coaching",
+  ],
+};
+
+// Templates belonging strictly to each Service
+export const SERVICE_TEMPLATES_MAP: Record<string, string[]> = {
+  // Healthcare
+  "Cardiologist": [
+    "Cardiology Patient Intake",
+    "Post-Op Follow-up Routine",
+    "ECG / Heart Rhythm Consultation",
+  ],
+  "Cataract": [
+    "Cataract Surgery Pre-Op Checklist",
+    "Lens Replacement Evaluation",
+    "Post-Cataract Eye Care Journey",
+  ],
+  "Clinical Psychologist": [
+    "Mental Health Initial Screener",
+    "Therapy Session Check-in",
+    "Anxiety & Stress Assessment",
+  ],
+  "Contoura Vision": [
+    "Corneal Topography Intake",
+    "Laser Refractive Candidacy",
+    "Vision Recovery Protocol",
+  ],
+  "Dentist": [
+    "Dental Hygiene & Cavity Screening",
+    "Root Canal Pre-Assessment",
+    "Orthodontic Aligners Consultation",
+  ],
+  "General Physician": [
+    "General Symptom Triage",
+    "Prescription Refill Flow",
+    "Annual Preventive Health Checkup",
+  ],
+  // IT/Tech
+  "AI/ML Strategy/ Model Development": [
+    "Custom LLM Fine-tuning Journey",
+    "Computer Vision Feasibility",
+    "Predictive ML Model Architecture",
+  ],
+  "App Development": [
+    "Mobile App MVP Discovery",
+    "Full-Stack Web App Scope",
+    "Cross-Platform Migration Plan",
+  ],
+  "Automation/Workflow Consultation": [
+    "AI Workflow Assessment",
+    "RPA Automation Blueprint",
+    "Webhook & Pipeline Integration",
+  ],
+  "Chatbot/Voice Agent Development": [
+    "Voice AI Prompt Tree Setup",
+    "Telephony SIP Trunking Config",
+    "Customer Support Agent Workflow",
+  ],
+  "Cloud Migration Consultation": [
+    "AWS / Azure Infrastructure Audit",
+    "Database Migration & Cutover",
+    "Serverless Architecture Review",
+  ],
+  "Cybersecurity Audit": [
+    "Vulnerability & Penetration Testing",
+    "SOC2 Compliance Readiness",
+    "Zero-Trust Access Architecture",
+  ],
+  // Automobile
+  "Accessory/Customization": [
+    "Custom Trim & Paint Inquiry",
+    "Audio & Infotainment Upgrade",
+    "Performance Kit Fitting",
+  ],
+  "Automobile": [
+    "Vehicle Service Booking",
+    "Emergency Roadside Assist",
+    "Periodic Maintenance Schedule",
+  ],
+  "Car Inspection / Valuations": [
+    "Pre-Purchase Inspection",
+    "Insurance Damage Valuation",
+    "Used Car Condition Report",
+  ],
+  "Test Drive Scheduling": [
+    "EV Fleet Test Drive",
+    "Luxury Sedan Experience",
+    "Weekend Test Drive Journey",
+  ],
+  // Real Estate
+  "Commercial Real Estates": [
+    "Office Space Requirement Intake",
+    "Retail Lease Negotiation",
+    "Industrial Warehouse Survey",
+  ],
+  "Property Buying & Advisory": [
+    "Buyer Budget & Preference Discovery",
+    "Mortgage Pre-Approval Flow",
+    "Site Visit & Inspection Booking",
+  ],
+  "Property Management": [
+    "Tenant Onboarding & Lease Sign",
+    "Maintenance Request Workflow",
+    "Rent Collection & Notice Dispatch",
+  ],
+  "Residential Leasing": [
+    "Apartment Rental Application",
+    "Virtual Tour Booking",
+    "Security Deposit & Handover",
+  ],
+  // Coaching & Advisory
+  "Career Coaching": [
+    "Resume & Interview Prep",
+    "Career Transition Roadmap",
+    "Executive Leadership Assessment",
+  ],
+  "Executive Coaching": [
+    "C-Suite Strategy Alignment",
+    "Quarterly OKR Guidance",
+    "High-Performance Team Coaching",
+  ],
+  "Financial Advisory": [
+    "Wealth & Portfolio Discovery",
+    "Retirement Strategy Intake",
+    "Tax Optimization Review",
+  ],
+  "Life & Wellness Coaching": [
+    "Goal Setting & Habit Formation",
+    "Work-Life Balance Assessment",
+    "Mindset Growth Blueprint",
+  ],
+  // Household Care
+  "AC Repair & Maintenance": [
+    "AC Gas Refill & Leak Check",
+    "Seasonal Compressor Servicing",
+    "Emergency AC Breakdown",
+  ],
+  "Carpentry & Woodwork": [
+    "Custom Furniture Estimation",
+    "Door/Window Repair Scope",
+    "Cabinet & Modular Fitting",
+  ],
+  "Deep Home Cleaning": [
+    "Full Villa Deep Clean Scope",
+    "Kitchen & Bathroom Sanitization",
+    "Move-in / Move-out Cleaning",
+  ],
+  "Electrical Installations": [
+    "Short Circuit & Fuse Diagnostic",
+    "Smart Home Wiring Setup",
+    "Appliance Connection & Safety",
+  ],
+  "Plumbing Services": [
+    "Pipe Leak & Water Pressure Audit",
+    "Bathroom Fixture Replacement",
+    "Drainage & Sewage Unclogging",
+  ],
+  // Wellness & Lifestyle
+  "Fitness & Personal Training": [
+    "Fitness Assessment & Body Metric",
+    "Custom Workout Routine Builder",
+    "1-on-1 Trainer Session Schedule",
+  ],
+  "Mindfulness & Meditation": [
+    "Stress Reduction Guided Routine",
+    "Daily Meditation Tracking",
+    "Sleep Quality Consultation",
+  ],
+  "Nutrition & Diet Planning": [
+    "Dietary Habit & Allergy Audit",
+    "Macro & Calorie Target Plan",
+    "Weekly Meal Prep Consultation",
+  ],
+  "Yoga Coaching": [
+    "Flexibility & Posture Intake",
+    "Beginner Yoga Flow Routine",
+    "Breathwork (Pranayama) Session",
+  ],
+};
+
 export interface CustomField {
   id: string;
   name: string;
@@ -60,9 +298,13 @@ export interface CustomField {
 export interface CustomSection {
   id: string;
   name: string;
+  industry?: string;
+  service?: string;
   module: ModuleType;
+  template?: string;
   description?: string;
   fieldIds: string[]; // Ordered list of CustomField IDs
+  rowTemplates?: Record<string, string>; // Template choice per row if module is Processes
 }
 
 // Initial Sample Data
@@ -146,6 +388,8 @@ const INITIAL_SECTIONS: CustomSection[] = [
   {
     id: "sec-1",
     name: "Patient Vitals & Intake",
+    industry: "Healthcare",
+    service: "Cardiologist",
     module: "Clients",
     description: "Primary client intake details and priority flags",
     fieldIds: ["cf-1", "cf-6", "cf-7"],
@@ -153,6 +397,8 @@ const INITIAL_SECTIONS: CustomSection[] = [
   {
     id: "sec-2",
     name: "Consultation Scheduling",
+    industry: "Healthcare",
+    service: "Cardiologist",
     module: "Appointments",
     description: "Doctor assignment and timing coordinates",
     fieldIds: ["cf-2", "cf-3"],
@@ -160,6 +406,8 @@ const INITIAL_SECTIONS: CustomSection[] = [
   {
     id: "sec-3",
     name: "Call Resolution Metrics",
+    industry: "IT/Tech",
+    service: "Automation/Workflow Consultation",
     module: "Call Logs",
     description: "Automated analysis scores and voice sentiment telemetry",
     fieldIds: ["cf-5"],
@@ -202,19 +450,26 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
   interface SectionFieldRow {
     rowId: string;
     module: ModuleType;
+    template?: string;
     fieldId: string;
   }
 
   const [sectionForm, setSectionForm] = useState<{
     name: string;
-    module: ModuleType;
     description: string;
+    industry: string;
+    service: string;
+    module: ModuleType;
+    template?: string;
     rows: SectionFieldRow[];
   }>({
     name: "",
-    module: "Clients",
     description: "",
-    rows: [{ rowId: "row-1", module: "Clients", fieldId: "" }],
+    industry: "Healthcare",
+    service: "Cardiologist",
+    module: "Clients",
+    template: "",
+    rows: [{ rowId: "row-1", module: "Clients", template: "", fieldId: "" }],
   });
 
   // Helper to auto-generate key from label
@@ -286,32 +541,39 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
         return {
           rowId: `row-${idx}-${Date.now()}`,
           module: foundField ? foundField.module : section.module,
+          template: (section.rowTemplates && section.rowTemplates[fId]) || "",
           fieldId: fId,
         };
       });
 
       setSectionForm({
         name: section.name,
-        module: section.module,
         description: section.description || "",
+        industry: section.industry || "Healthcare",
+        service: section.service || "Cardiologist",
+        module: section.module,
+        template: section.template || "",
         rows:
           mappedRows.length > 0
             ? mappedRows
-            : [{ rowId: `row-1`, module: section.module, fieldId: "" }],
+            : [{ rowId: `row-1`, module: section.module, template: "", fieldId: "" }],
       });
     } else {
       setEditingSectionId(null);
       setSectionForm({
         name: "",
-        module: "Clients",
         description: "",
-        rows: [{ rowId: `row-${Date.now()}`, module: "Clients", fieldId: "" }],
+        industry: "Healthcare",
+        service: "Cardiologist",
+        module: selectedModuleFilter !== "All" ? (selectedModuleFilter as ModuleType) : "Clients",
+        template: "",
+        rows: [{ rowId: `row-${Date.now()}`, module: "Clients", template: "", fieldId: "" }],
       });
     }
     setIsSectionDrawerOpen(true);
   };
 
-  // Add a new row of [Module Dropdown, Field Dropdown]
+  // Add a new row of [Module Dropdown, Template Dropdown (if Process), Field Dropdown]
   const handleAddFieldRow = () => {
     setSectionForm((prev) => ({
       ...prev,
@@ -320,6 +582,10 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
         {
           rowId: `row-${Date.now()}`,
           module: prev.module,
+          template:
+            prev.module === "Processes"
+              ? (SERVICE_TEMPLATES_MAP[prev.service] || [])[0] || ""
+              : "",
           fieldId: "",
         },
       ],
@@ -331,10 +597,24 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
     setSectionForm((prev) => {
       const updated = [...prev.rows];
       const availableForMod = fields.filter((f) => f.module === newModule);
+      const availableTemplatesForService = SERVICE_TEMPLATES_MAP[prev.service] || [];
       updated[rowIndex] = {
         ...updated[rowIndex],
         module: newModule,
+        template: newModule === "Processes" ? availableTemplatesForService[0] || "" : "",
         fieldId: availableForMod[0]?.id || "",
+      };
+      return { ...prev, rows: updated };
+    });
+  };
+
+  // Update row template (for Processes module)
+  const handleRowTemplateChange = (rowIndex: number, newTemplate: string) => {
+    setSectionForm((prev) => {
+      const updated = [...prev.rows];
+      updated[rowIndex] = {
+        ...updated[rowIndex],
+        template: newTemplate,
       };
       return { ...prev, rows: updated };
     });
@@ -383,6 +663,13 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
       .map((r) => r.fieldId)
       .filter((fId) => fId && fId.trim() !== "");
 
+    const rowTemplates: Record<string, string> = {};
+    sectionForm.rows.forEach((r) => {
+      if (r.module === "Processes" && r.template && r.fieldId) {
+        rowTemplates[r.fieldId] = r.template;
+      }
+    });
+
     if (editingSectionId) {
       setSections(
         sections.map((sec) =>
@@ -390,9 +677,13 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
             ? {
                 ...sec,
                 name: sectionForm.name.trim(),
-                module: sectionForm.module,
                 description: sectionForm.description.trim(),
+                industry: sectionForm.industry,
+                service: sectionForm.service,
+                module: sectionForm.module,
+                template: sectionForm.module === "Processes" ? sectionForm.template : undefined,
                 fieldIds: orderedFieldIds,
+                rowTemplates,
               }
             : sec
         )
@@ -401,9 +692,13 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
       const newSec: CustomSection = {
         id: `sec-${Date.now()}`,
         name: sectionForm.name.trim(),
-        module: sectionForm.module,
         description: sectionForm.description.trim(),
+        industry: sectionForm.industry,
+        service: sectionForm.service,
+        module: sectionForm.module,
+        template: sectionForm.module === "Processes" ? sectionForm.template : undefined,
         fieldIds: orderedFieldIds,
+        rowTemplates,
       };
       setSections([newSec, ...sections]);
     }
@@ -431,6 +726,8 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
         selectedModuleFilter === "All" || s.module === selectedModuleFilter;
       const matchSearch =
         s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.industry && s.industry.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (s.service && s.service.toLowerCase().includes(searchQuery.toLowerCase())) ||
         s.module.toLowerCase().includes(searchQuery.toLowerCase());
       return matchModule && matchSearch;
     });
@@ -584,26 +881,18 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
             />
           </div>
 
-          {/* Module Filter Dropdown with Filter Icon */}
-          <div className="relative shrink-0">
-            <Filter className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <select
+          {/* Module Filter Dropdown with CustomSelect */}
+          <div className="w-48 shrink-0">
+            <CustomSelect
               value={selectedModuleFilter}
-              onChange={(e) => setSelectedModuleFilter(e.target.value)}
-              className="
-                pl-9 pr-8 py-2.5 text-xs sm:text-sm font-medium bg-white/70 backdrop-blur-md
-                border border-white/80 rounded-2xl text-[#222222] shadow-xs
-                focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60 focus:bg-white
-                cursor-pointer
-              "
-            >
-              <option value="All">All Modules</option>
-              {MODULES.map((mod) => (
-                <option key={mod} value={mod}>
-                  {mod}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedModuleFilter(val)}
+              options={[
+                { value: "All", label: "All Modules" },
+                ...MODULES.map((m) => ({ value: m, label: m })),
+              ]}
+              label="Module Filter"
+              placeholder="All Modules"
+            />
           </div>
         </div>
 
@@ -612,7 +901,7 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
           <div className="overflow-hidden rounded-2xl border border-white/70 bg-white/40 backdrop-blur-xs shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-white/60 border-b border-slate-200/60 text-slate-400 uppercase text-[11px] font-semibold tracking-wider">
+                <thead className="bg-white/60 border-b border-slate-200/60 text-[#181e25] uppercase text-[11px] font-bold tracking-wider">
                   <tr>
                     <th className="px-6 py-4">Field Label</th>
                     <th className="px-6 py-4">API Key</th>
@@ -710,13 +999,15 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
             </div>
           </div>
         ) : (
-          /* TAB 2: CUSTOM SECTIONS TABLE (Clean single color scheme, name only, no sequence column) */
+          /* TAB 2: CUSTOM SECTIONS TABLE (With Industry & Service badges) */
           <div className="overflow-hidden rounded-2xl border border-white/70 bg-white/40 backdrop-blur-xs shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-white/60 border-b border-slate-200/60 text-slate-400 uppercase text-[11px] font-semibold tracking-wider">
+                <thead className="bg-white/60 border-b border-slate-200/60 text-[#181e25] uppercase text-[11px] font-bold tracking-wider">
                   <tr>
                     <th className="px-6 py-4">Section Name</th>
+                    <th className="px-6 py-4">Industry</th>
+                    <th className="px-6 py-4">Service</th>
                     <th className="px-6 py-4">Target Module</th>
                     <th className="px-6 py-4">Field Count</th>
                     <th className="px-6 py-4 text-right">Actions</th>
@@ -725,7 +1016,7 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
                 <tbody className="divide-y divide-slate-100/70">
                   {filteredSections.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-6 py-12 text-center text-slate-400 text-sm">
+                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400 text-sm">
                         No custom sections created yet for this module.
                       </td>
                     </tr>
@@ -737,6 +1028,16 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
                       >
                         <td className="px-6 py-4 font-semibold text-[#222222] whitespace-nowrap">
                           {sec.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2.5 py-0.5 rounded-md bg-blue-50 border border-blue-200/60 text-[#1456f0] font-semibold text-xs">
+                            {sec.industry || "General"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2.5 py-0.5 rounded-md bg-slate-100/80 border border-slate-200/50 text-[#45515e] font-medium text-xs">
+                            {sec.service || "—"}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="px-2.5 py-1 rounded-full bg-slate-100/80 border border-slate-200/50 text-[#45515e] font-medium text-xs">
@@ -801,49 +1102,16 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
               type="button"
               onClick={handleCreateField}
             >
-              Create Field
+              Save Field
             </Pill>
           </>
         }
       >
         <form onSubmit={handleCreateField} className="space-y-5">
-          {/* Section Heading Banner */}
-          <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-            <SlidersHorizontal className="w-4 h-4 text-[#1456f0]" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Field Configuration
-            </span>
-          </div>
-
-          {/* Module Selector */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-              <span>Target Module</span>
-              <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={fieldForm.module}
-              onChange={(e) =>
-                setFieldForm({ ...fieldForm, module: e.target.value as ModuleType })
-              }
-              className="
-                w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
-                border border-slate-200/80 rounded-xl text-[#222222] shadow-xs
-                focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60 focus:bg-white
-              "
-            >
-              {MODULES.map((mod) => (
-                <option key={mod} value={mod}>
-                  {mod}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Field Label */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-              <span>Label</span>
+            <label className="text-xs font-bold uppercase tracking-wider text-[#181e25] flex items-center gap-1">
+              <span>Field Label</span>
               <span className="text-rose-500">*</span>
             </label>
             <input
@@ -851,7 +1119,7 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
               required
               value={fieldForm.name}
               onChange={(e) => handleLabelChange(e.target.value)}
-              placeholder="e.g. Budget, Hospital Location, Doctor"
+              placeholder="e.g. Budget, Callback Time, Hospital Location"
               className="
                 w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
                 border border-slate-200/80 rounded-xl placeholder:text-slate-400 text-[#222222]
@@ -860,68 +1128,77 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
             />
           </div>
 
-          {/* Key and Type Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Key */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                <span>Key</span>
-                <span className="text-rose-500">*</span>
-              </label>
+          {/* System API Key (Auto generated) */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#181e25]">
+              API Key (Auto-Generated)
+            </label>
+            <div className="relative">
               <input
                 type="text"
-                required
                 value={fieldForm.key}
                 onChange={(e) => setFieldForm({ ...fieldForm, key: e.target.value })}
-                placeholder="e.g. budget"
+                placeholder="e.g. hospital_location"
                 className="
-                  w-full px-3.5 py-2.5 text-xs font-mono bg-white/70 backdrop-blur-md
-                  border border-slate-200/80 rounded-xl text-[#1456f0] placeholder:text-slate-400
-                  shadow-xs focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60 focus:bg-white
-                "
-              />
-              <p className="text-[10px] text-slate-400">
-                Unique identifier for API usage (auto-generated).
-              </p>
-            </div>
-
-            {/* Type */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                <span>Type</span>
-                <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={fieldForm.type}
-                onChange={(e) =>
-                  setFieldForm({
-                    ...fieldForm,
-                    type: e.target.value as CustomField["type"],
-                  })
-                }
-                className="
-                  w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
-                  border border-slate-200/80 rounded-xl text-[#222222] shadow-xs
+                  w-full px-3.5 py-2.5 text-xs sm:text-sm font-mono bg-slate-50/80
+                  border border-slate-200/80 rounded-xl text-[#1456f0] shadow-xs
                   focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60 focus:bg-white
                 "
-              >
-                <option value="Text">Text</option>
-                <option value="Number">Number</option>
-                <option value="Boolean (Yes/No)">Boolean (Yes/No)</option>
-                <option value="Date">Date</option>
-                <option value="Select (Dropdown)">Select (Dropdown)</option>
-              </select>
+              />
             </div>
+            <p className="text-[11px] text-slate-400">
+              Used in voice agent prompts and webhook payloads as <span className="font-mono text-[#1456f0]">{`{{${fieldForm.key || "key"}}}`}</span>
+            </p>
           </div>
 
-          {/* Select Options Sub-Editor if Select (Dropdown) selected */}
+          {/* Module Selector */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#181e25] flex items-center gap-1">
+              <span>Module</span>
+              <span className="text-rose-500">*</span>
+            </label>
+            <CustomSelect
+              value={fieldForm.module}
+              onChange={(val) =>
+                setFieldForm({ ...fieldForm, module: val as ModuleType })
+              }
+              options={[...MODULES]}
+              label="Select Module"
+            />
+          </div>
+
+          {/* Data Type Selector */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#181e25] flex items-center gap-1">
+              <span>Data Type</span>
+              <span className="text-rose-500">*</span>
+            </label>
+            <CustomSelect
+              value={fieldForm.type}
+              onChange={(val) =>
+                setFieldForm({
+                  ...fieldForm,
+                  type: val as CustomField["type"],
+                })
+              }
+              options={[
+                "Text",
+                "Number",
+                "Date",
+                "Boolean (Yes/No)",
+                "Select (Dropdown)",
+              ]}
+              label="Select Data Type"
+            />
+          </div>
+
+          {/* Options Config (Only for Select type) */}
           {fieldForm.type === "Select (Dropdown)" && (
-            <div className="p-4 rounded-2xl bg-white/60 border border-slate-200/80 space-y-3">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 block">
+            <div className="space-y-2.5 p-4 rounded-2xl bg-white/50 border border-slate-200/80">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#181e25] block">
                 Dropdown Options
               </label>
-
-              <div className="flex items-center gap-2">
+              <div className="flex gap-2">
                 <input
                   type="text"
                   value={fieldForm.newOptionInput}
@@ -936,47 +1213,48 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
                   }}
                   placeholder="Type an option and press Add..."
                   className="
-                    flex-1 px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl
-                    placeholder:text-slate-400 text-[#222222] focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40
+                    flex-1 px-3 py-2 text-xs bg-white border border-slate-200/80 rounded-xl
+                    text-[#222222] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40
                   "
                 />
-                <button
+                <Pill
+                  variant="navy"
+                  size="sm"
                   type="button"
                   onClick={handleAddOption}
-                  className="px-3 py-2 rounded-xl bg-[#1456f0] text-white text-xs font-medium hover:bg-[#2563eb] transition-colors"
                 >
                   Add Option
-                </button>
+                </Pill>
               </div>
 
-              {fieldForm.options.length === 0 ? (
-                <p className="text-[11px] text-slate-400 italic">
-                  No options added yet. Click &quot;Add Option&quot; to create dropdown choices.
-                </p>
-              ) : (
+              {fieldForm.options.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {fieldForm.options.map((opt, idx) => (
                     <span
                       key={idx}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-blue-50 text-[#1456f0] text-xs font-medium border border-blue-100"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs text-[#222222]"
                     >
-                      <span>{opt}</span>
+                      {opt}
                       <button
                         type="button"
                         onClick={() => handleRemoveOption(idx)}
-                        className="text-slate-400 hover:text-rose-500"
+                        className="text-slate-400 hover:text-rose-600"
                       >
                         <X className="w-3 h-3" />
                       </button>
                     </span>
                   ))}
                 </div>
+              ) : (
+                <p className="text-[11px] text-slate-400 italic">
+                  No options added yet. Add at least one option.
+                </p>
               )}
             </div>
           )}
 
-          {/* Mark as Required Field */}
-          <div className="flex items-center gap-3 pt-2">
+          {/* Mark Required Checkbox */}
+          <div className="flex items-center gap-2 pt-2">
             <input
               type="checkbox"
               id="markRequired"
@@ -986,14 +1264,14 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
               }
               className="w-4 h-4 rounded border-slate-300 text-[#1456f0] focus:ring-[#1456f0]"
             />
-            <label htmlFor="markRequired" className="text-xs font-semibold text-[#222222] cursor-pointer">
+            <label htmlFor="markRequired" className="text-xs font-bold text-[#181e25] cursor-pointer">
               Mark as required field
             </label>
           </div>
         </form>
       </SideDrawer>
 
-      {/* SIDE DRAWER 2: CREATE / EDIT CUSTOM SECTION (WITH FIELD SELECTION & REORDERING) */}
+      {/* SIDE DRAWER 2: CREATE / EDIT CUSTOM SECTION (WITH INDUSTRY, SERVICE, TEMPLATES & REORDERING) */}
       <SideDrawer
         isOpen={isSectionDrawerOpen}
         onClose={() => setIsSectionDrawerOpen(false)}
@@ -1022,9 +1300,9 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
         }
       >
         <form onSubmit={handleSaveSection} className="space-y-5">
-          {/* Section Name */}
+          {/* 1. Section Label */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#181e25] flex items-center gap-1">
               <span>Section Label</span>
               <span className="text-rose-500">*</span>
             </label>
@@ -1044,38 +1322,9 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
             />
           </div>
 
-          {/* Target Module Selector */}
+          {/* 2. Description (Placed directly after Section Label) */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-              <span>Target Module</span>
-              <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={sectionForm.module}
-              onChange={(e) => {
-                const newMod = e.target.value as ModuleType;
-                setSectionForm({
-                  ...sectionForm,
-                  module: newMod,
-                });
-              }}
-              className="
-                w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
-                border border-slate-200/80 rounded-xl text-[#222222] shadow-xs
-                focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60 focus:bg-white
-              "
-            >
-              {MODULES.map((mod) => (
-                <option key={mod} value={mod}>
-                  {mod}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#181e25]">
               Description
             </label>
             <input
@@ -1093,17 +1342,117 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
             />
           </div>
 
-          {/* Paired Dropdown Rows: Module & Field in same row + Add Option */}
+          {/* 3. Industry & Services Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Industry Selector */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#181e25] flex items-center gap-1">
+                <span>Industry</span>
+                <span className="text-rose-500">*</span>
+              </label>
+              <CustomSelect
+                value={sectionForm.industry}
+                onChange={(newInd) => {
+                  const availableServs = INDUSTRY_SERVICES_MAP[newInd] || [];
+                  const newServ = availableServs[0] || "";
+                  const availableTemps = SERVICE_TEMPLATES_MAP[newServ] || [];
+                  setSectionForm({
+                    ...sectionForm,
+                    industry: newInd,
+                    service: newServ,
+                    template: sectionForm.module === "Processes" ? availableTemps[0] || "" : "",
+                    rows: sectionForm.rows.map((r) =>
+                      r.module === "Processes"
+                        ? { ...r, template: availableTemps[0] || "" }
+                        : r
+                    ),
+                  });
+                }}
+                options={[...AVAILABLE_INDUSTRIES]}
+                label="Choose Industry"
+              />
+            </div>
+
+            {/* Relevant Services Selector */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#181e25] flex items-center gap-1">
+                <span>Service</span>
+                <span className="text-rose-500">*</span>
+              </label>
+              <CustomSelect
+                value={sectionForm.service}
+                onChange={(newServ) => {
+                  const availableTemps = SERVICE_TEMPLATES_MAP[newServ] || [];
+                  setSectionForm({
+                    ...sectionForm,
+                    service: newServ,
+                    template: sectionForm.module === "Processes" ? availableTemps[0] || "" : "",
+                    rows: sectionForm.rows.map((r) =>
+                      r.module === "Processes"
+                        ? { ...r, template: availableTemps[0] || "" }
+                        : r
+                    ),
+                  });
+                }}
+                options={INDUSTRY_SERVICES_MAP[sectionForm.industry] || []}
+                label={`Services (${sectionForm.industry})`}
+              />
+            </div>
+          </div>
+
+          {/* 4. Target Module Selector */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#181e25] flex items-center gap-1">
+              <span>Target Module</span>
+              <span className="text-rose-500">*</span>
+            </label>
+            <CustomSelect
+              value={sectionForm.module}
+              onChange={(val) => {
+                const newMod = val as ModuleType;
+                const availableTemps = SERVICE_TEMPLATES_MAP[sectionForm.service] || [];
+                setSectionForm({
+                  ...sectionForm,
+                  module: newMod,
+                  template: newMod === "Processes" ? availableTemps[0] || "" : "",
+                });
+              }}
+              options={[...MODULES]}
+              label="Target Module"
+            />
+          </div>
+
+          {/* 5. If Process is chosen: Choose Template dropdown below Target Module */}
+          {sectionForm.module === "Processes" && (
+            <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#181e25] flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <span>Choose Template</span>
+                  <span className="text-rose-500">*</span>
+                </span>
+                <span className="text-[11px] font-semibold text-[#1456f0] lowercase tracking-normal">
+                  ({sectionForm.service})
+                </span>
+              </label>
+              <CustomSelect
+                value={sectionForm.template || ""}
+                onChange={(val) =>
+                  setSectionForm({ ...sectionForm, template: val })
+                }
+                options={SERVICE_TEMPLATES_MAP[sectionForm.service] || []}
+                placeholder="-- Choose Template --"
+                label={`Templates (${sectionForm.service})`}
+                triggerClassName="bg-blue-50/40 border-blue-200/80 text-[#181e25]"
+              />
+            </div>
+          )}
+
+          {/* SECTION LAYOUT (Renamed & styled with bluish-black header) */}
           <div className="space-y-3 pt-3 border-t border-slate-200/80">
             <div className="flex items-center justify-between">
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 block">
-                  Section Custom Fields
-                </label>
-                <span className="text-[11px] text-slate-400">
-                  Select module and field for each position. Use arrows to reorder.
-                </span>
-              </div>
+              <label className="text-xs font-bold uppercase tracking-wider text-[#181e25] block">
+                Section Layout
+              </label>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-[#1456f0]">
                 {sectionForm.rows.filter((r) => r.fieldId).length} fields configured
               </span>
@@ -1129,6 +1478,8 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
                   const availableForThisRow = fields.filter(
                     (f) => f.module === row.module
                   );
+                  // Get templates belonging strictly to the selected service
+                  const serviceTemplates = SERVICE_TEMPLATES_MAP[sectionForm.service] || [];
 
                   return (
                     <div
@@ -1168,13 +1519,10 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
                         }
                       `}
                     >
-                      {/* Header line for row position and delete action */}
+                      {/* Header line for drag handle and delete action */}
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <GripVertical className="w-4 h-4 text-slate-400 cursor-grab active:cursor-grabbing shrink-0" />
-                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                            Position #{index + 1}
-                          </span>
+                        <div className="flex items-center gap-2 text-slate-400">
+                          <GripVertical className="w-4 h-4 cursor-grab active:cursor-grabbing shrink-0" />
                         </div>
 
                         {/* Delete Action Button */}
@@ -1188,58 +1536,72 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
                         </button>
                       </div>
 
-                      {/* Two fields in the SAME ROW: Module Dropdown + Field Dropdown */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {/* Dropdown Fields: If module is Processes, also show Available Templates */}
+                      <div
+                        className={`grid gap-2 ${
+                          row.module === "Processes"
+                            ? "grid-cols-1 sm:grid-cols-3"
+                            : "grid-cols-1 sm:grid-cols-2"
+                        }`}
+                      >
                         {/* 1. Module Dropdown */}
                         <div>
-                          <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-[#181e25] block mb-1">
                             Module
                           </label>
-                          <select
+                          <CustomSelect
                             value={row.module}
-                            onChange={(e) =>
-                              handleRowModuleChange(
-                                index,
-                                e.target.value as ModuleType
-                              )
+                            onChange={(val) =>
+                              handleRowModuleChange(index, val as ModuleType)
                             }
-                            className="
-                              w-full px-3 py-2 text-xs font-medium bg-white/90
-                              border border-slate-200/90 rounded-xl text-[#222222] shadow-xs
-                              focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60
-                            "
-                          >
-                            {MODULES.map((mod) => (
-                              <option key={mod} value={mod}>
-                                {mod}
-                              </option>
-                            ))}
-                          </select>
+                            options={[...MODULES]}
+                            label="Module"
+                            triggerClassName="py-2"
+                          />
                         </div>
 
-                        {/* 2. Custom Field Dropdown */}
+                        {/* 2. Available Templates (Condition: only if module is "Processes") */}
+                        {row.module === "Processes" && (
+                          <div className="animate-in fade-in zoom-in-95 duration-150">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-[#181e25] block mb-1 flex items-center justify-between">
+                              <span>Available Templates</span>
+                              <span className="text-[9px] font-semibold text-[#1456f0] lowercase tracking-normal">
+                                ({sectionForm.service})
+                              </span>
+                            </label>
+                            <CustomSelect
+                              value={row.template || ""}
+                              onChange={(val) =>
+                                handleRowTemplateChange(index, val)
+                              }
+                              options={serviceTemplates}
+                              placeholder="-- Choose Template --"
+                              label={`Templates (${sectionForm.service})`}
+                              triggerClassName="py-2 bg-blue-50/40 border-blue-200/80 text-[#181e25]"
+                            />
+                          </div>
+                        )}
+
+                        {/* 3. Custom Field Dropdown */}
                         <div>
-                          <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-[#181e25] block mb-1">
                             Custom Field
                           </label>
-                          <select
+                          <CustomSelect
                             value={row.fieldId}
-                            onChange={(e) =>
-                              handleRowFieldChange(index, e.target.value)
+                            onChange={(val) =>
+                              handleRowFieldChange(index, val)
                             }
-                            className="
-                              w-full px-3 py-2 text-xs font-medium bg-white/90
-                              border border-slate-200/90 rounded-xl text-[#222222] shadow-xs
-                              focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60
-                            "
-                          >
-                            <option value="">-- Choose Field --</option>
-                            {availableForThisRow.map((f) => (
-                              <option key={f.id} value={f.id}>
-                                {f.name} ({f.type})
-                              </option>
-                            ))}
-                          </select>
+                            options={availableForThisRow.map((f) => ({
+                              value: f.id,
+                              label: f.name,
+                              badge: f.type,
+                            }))}
+                            placeholder="-- Choose Field --"
+                            label={`Fields (${row.module})`}
+                            searchable={availableForThisRow.length > 5}
+                            triggerClassName="py-2"
+                          />
                         </div>
                       </div>
                     </div>
