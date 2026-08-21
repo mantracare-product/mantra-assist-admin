@@ -8,46 +8,74 @@ import { useIndustryTemplateStore } from "@/lib/industry-template-store";
 import { FormTemplate } from "@/lib/types/industry-templates";
 import { WebFormBuilderModal } from "@/components/industry-templates/WebFormBuilderModal";
 import {
-  CheckSquare,
   Search,
   Plus,
   Edit2,
   Trash2,
-  Eye,
   Layers,
   Sparkles,
-  Tag,
-  Clock,
+  Stethoscope,
+  Activity,
+  Scale,
+  Home,
+  Wrench,
+  Car,
+  Cpu,
+  Briefcase,
+  Menu,
+  Copy,
+  ExternalLink,
 } from "lucide-react";
 
 export default function FormsPage({ onMenuToggle }: { onMenuToggle?: () => void }) {
   const { allForms, saveFormTemplate, deleteFormTemplate, bundles } = useIndustryTemplateStore();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("All");
+  const [activeMenuFormId, setActiveMenuFormId] = useState<string | null>(null);
 
   // Form Builder Modal State
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [selectedForm, setSelectedForm] = useState<FormTemplate | null>(null);
 
+  const getIndustryIcon = (industryName?: string) => {
+    switch (industryName) {
+      case "Dental Practice":
+        return <Stethoscope className="w-3.5 h-3.5 text-rose-500" />;
+      case "Cardiology Specialist":
+        return <Activity className="w-3.5 h-3.5 text-red-500" />;
+      case "Personal Injury Law":
+        return <Scale className="w-3.5 h-3.5 text-purple-500" />;
+      case "Residential Real Estate":
+        return <Home className="w-3.5 h-3.5 text-emerald-500" />;
+      case "HVAC & Home Services":
+        return <Wrench className="w-3.5 h-3.5 text-orange-500" />;
+      case "Auto Dealership & Service":
+        return <Car className="w-3.5 h-3.5 text-amber-500" />;
+      case "SaaS / IT Consulting":
+        return <Cpu className="w-3.5 h-3.5 text-blue-500" />;
+      case "Executive Coaching":
+        return <Sparkles className="w-3.5 h-3.5 text-pink-500" />;
+      default:
+        return <Briefcase className="w-3.5 h-3.5 text-slate-500" />;
+    }
+  };
+
   // Filtered forms
   const filteredForms = useMemo(() => {
     return allForms.filter((f) => {
-      const matchCat =
-        selectedCategoryFilter === "All" || f.category === selectedCategoryFilter;
       const matchSearch =
         f.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (f.industryName && f.industryName.toLowerCase().includes(searchQuery.toLowerCase())) ||
         f.description.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchCat && matchSearch;
+      return matchSearch;
     });
-  }, [allForms, selectedCategoryFilter, searchQuery]);
+  }, [allForms, searchQuery]);
 
   const handleOpenCreateForm = () => {
     const newForm: FormTemplate = {
       id: `form-${Date.now()}`,
       industryId: bundles[0]?.id || "ind-general",
-      industryName: bundles[0]?.industryName || "General",
+      industryName: bundles[0]?.industryName || "General / Universal",
       title: "New Client Intake Form",
       category: "intake",
       description: "Capture client information and schedule consultation.",
@@ -128,46 +156,25 @@ export default function FormsPage({ onMenuToggle }: { onMenuToggle?: () => void 
           </div>
         </div>
 
-        {/* Category Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
-          {["All", "intake", "lead_capture", "booking", "quote", "feedback"].map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setSelectedCategoryFilter(cat)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition-all border ${
-                selectedCategoryFilter === cat
-                  ? "bg-[#1456f0] text-white border-transparent shadow-xs"
-                  : "bg-white/80 hover:bg-white text-slate-600 border-slate-200/80"
-              }`}
-            >
-              {cat === "All" ? "All Categories" : cat.replace(/_/g, " ")}
-            </button>
-          ))}
-        </div>
-
         {/* Form Templates Data Table */}
         <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white/50 backdrop-blur-md shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="bg-gradient-to-r from-[#181e25] to-[#2c3e50] text-white">
-                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-left w-[32%]">
-                    Form Title & Industry
+                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-left w-[42%]">
+                    Form Title
                   </th>
-                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-left w-[18%]">
-                    Category / Intent
+                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-left w-[25%]">
+                    Assigned Industry
                   </th>
-                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[14%]">
+                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[13%]">
                     Sections
                   </th>
-                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[12%]">
-                    Est. Time
-                  </th>
-                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[12%]">
+                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[10%]">
                     Total Fields
                   </th>
-                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[12%]">
+                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[10%]">
                     Actions
                   </th>
                 </tr>
@@ -175,7 +182,7 @@ export default function FormsPage({ onMenuToggle }: { onMenuToggle?: () => void 
               <tbody className="divide-y divide-slate-100">
                 {filteredForms.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-16 text-center text-slate-400 text-sm">
+                    <td colSpan={5} className="px-6 py-16 text-center text-slate-400 text-sm">
                       No form templates match your search criteria.
                     </td>
                   </tr>
@@ -188,32 +195,25 @@ export default function FormsPage({ onMenuToggle }: { onMenuToggle?: () => void 
                         key={form.id}
                         className="hover:bg-white/80 transition-colors duration-150 group"
                       >
-                        {/* 1. Form Title & Industry */}
+                        {/* 1. Form Title (Clean title only, no description) */}
                         <td className="px-5 py-4 align-middle">
-                          <div className="space-y-0.5">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedForm(form);
-                                setIsBuilderOpen(true);
-                              }}
-                              className="font-bold text-sm text-[#181e25] hover:text-[#1456f0] transition-colors text-left group-hover:underline block truncate"
-                            >
-                              {form.title}
-                            </button>
-                            {form.industryName && (
-                              <span className="text-[11px] text-slate-400 font-semibold block truncate">
-                                {form.industryName}
-                              </span>
-                            )}
-                            <p className="text-xs text-slate-500 line-clamp-1">{form.description}</p>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedForm(form);
+                              setIsBuilderOpen(true);
+                            }}
+                            className="font-bold text-sm text-[#181e25] hover:text-[#1456f0] transition-colors text-left group-hover:underline block truncate"
+                          >
+                            {form.title}
+                          </button>
                         </td>
 
-                        {/* 2. Category / Intent */}
+                        {/* 2. Assigned Industry (Styled badge component) */}
                         <td className="px-4 py-4 align-middle">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50/90 text-[#1456f0] border border-blue-200/70 font-semibold text-xs shadow-2xs uppercase">
-                            {form.category.replace(/_/g, " ")}
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50/90 text-[#1456f0] border border-blue-200/60 shadow-2xs">
+                            {getIndustryIcon(form.industryName)}
+                            <span className="truncate">{form.industryName || "General / Universal"}</span>
                           </span>
                         </td>
 
@@ -225,46 +225,91 @@ export default function FormsPage({ onMenuToggle }: { onMenuToggle?: () => void 
                           </span>
                         </td>
 
-                        {/* 4. Est. Time */}
-                        <td className="px-4 py-4 align-middle text-center">
-                          <span className="text-xs text-slate-600 font-mono font-semibold">
-                            ~{form.estimatedMinutes} mins
-                          </span>
-                        </td>
-
-                        {/* 5. Total Fields */}
+                        {/* 4. Total Fields */}
                         <td className="px-4 py-4 align-middle text-center">
                           <span className="inline-block px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-mono text-xs font-bold border border-emerald-200/60">
                             {totalFields} Fields
                           </span>
                         </td>
 
-                        {/* 6. Actions */}
+                        {/* 5. Actions (Hamburger Dropdown) */}
                         <td className="px-4 py-4 align-middle text-center">
-                          <div className="inline-flex items-center justify-center gap-1.5 bg-white/80 p-1 rounded-xl border border-slate-200/60 shadow-2xs">
+                          <div className="relative inline-block text-left">
                             <button
                               type="button"
-                              onClick={() => {
-                                setSelectedForm(form);
-                                setIsBuilderOpen(true);
-                              }}
-                              className="p-1.5 rounded-lg text-slate-600 hover:text-[#1456f0] hover:bg-blue-50 transition-colors"
-                              title="Open Visual Form Canvas"
+                              onClick={() =>
+                                setActiveMenuFormId(
+                                  activeMenuFormId === form.id ? null : form.id
+                                )
+                              }
+                              className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                                activeMenuFormId === form.id
+                                  ? "bg-[#1456f0] text-white shadow-xs"
+                                  : "bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#181e25]"
+                              }`}
+                              title="Form Actions"
                             >
-                              <Edit2 className="w-3.5 h-3.5" />
+                              <Menu className="w-4 h-4" />
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (confirm(`Delete form template "${form.title}"?`)) {
-                                  deleteFormTemplate(form.id);
-                                }
-                              }}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                              title="Delete Form"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+
+                            {/* Dropdown Menu */}
+                            {activeMenuFormId === form.id && (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-40"
+                                  onClick={() => setActiveMenuFormId(null)}
+                                />
+                                <div className="absolute right-0 top-full mt-1.5 w-44 bg-white rounded-2xl border border-slate-200/90 shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-0.5 text-left">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedForm(form);
+                                      setIsBuilderOpen(true);
+                                      setActiveMenuFormId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-[#1456f0] hover:bg-blue-50/80 rounded-xl transition-all text-left cursor-pointer"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5 text-[#1456f0]" />
+                                    <span>Edit Form</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const duplicated: FormTemplate = {
+                                        ...form,
+                                        id: `form-${Date.now()}`,
+                                        title: `${form.title} (Copy)`,
+                                        createdAt: new Date().toISOString(),
+                                        updatedAt: new Date().toISOString(),
+                                      };
+                                      saveFormTemplate(duplicated);
+                                      setActiveMenuFormId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-[#1456f0] hover:bg-blue-50/80 rounded-xl transition-all text-left cursor-pointer"
+                                  >
+                                    <Copy className="w-3.5 h-3.5 text-slate-500" />
+                                    <span>Duplicate</span>
+                                  </button>
+
+                                  <div className="h-[1px] bg-slate-100 my-1" />
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveMenuFormId(null);
+                                      if (confirm(`Delete form template "${form.title}"?`)) {
+                                        deleteFormTemplate(form.id);
+                                      }
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-all text-left cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                                    <span>Delete Form</span>
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>

@@ -164,6 +164,9 @@ export interface FormFieldTemplate {
   options?: { label: string; value: string }[];
   validationRegex?: string;
   crmFieldMapping?: string;
+  fieldSource?: 'standard' | 'system' | 'custom';
+  sourceModule?: string;
+  systemFieldKey?: string;
   minCharacters?: number | string;
   maxCharacters?: number | string;
   conditionalLogic?: {

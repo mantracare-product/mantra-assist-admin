@@ -100,27 +100,24 @@ export const DocumentEditorModal: React.FC<DocumentEditorModalProps> = ({
               <button
                 type="button"
                 onClick={() => setPreviewMode("edit")}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                  previewMode === "edit" ? "bg-white text-[#181e25] shadow-xs" : "text-slate-500"
-                }`}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${previewMode === "edit" ? "bg-white text-[#181e25] shadow-xs" : "text-slate-500"
+                  }`}
               >
                 Markdown Editor
               </button>
               <button
                 type="button"
                 onClick={() => setPreviewMode("split")}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                  previewMode === "split" ? "bg-white text-[#181e25] shadow-xs" : "text-slate-500"
-                }`}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${previewMode === "split" ? "bg-white text-[#181e25] shadow-xs" : "text-slate-500"
+                  }`}
               >
                 Split View
               </button>
               <button
                 type="button"
                 onClick={() => setPreviewMode("preview")}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                  previewMode === "preview" ? "bg-white text-[#181e25] shadow-xs" : "text-slate-500"
-                }`}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${previewMode === "preview" ? "bg-white text-[#181e25] shadow-xs" : "text-slate-500"
+                  }`}
               >
                 Rendered Preview
               </button>
@@ -267,13 +264,12 @@ export const DocumentEditorModal: React.FC<DocumentEditorModalProps> = ({
             </label>
 
             <div
-              className={`grid gap-4 ${
-                previewMode === "split"
+              className={`grid gap-4 ${previewMode === "split"
                   ? "grid-cols-1 lg:grid-cols-2"
                   : previewMode === "edit"
-                  ? "grid-cols-1"
-                  : "grid-cols-1"
-              }`}
+                    ? "grid-cols-1"
+                    : "grid-cols-1"
+                }`}
             >
               {(previewMode === "split" || previewMode === "edit") && (
                 <textarea

@@ -106,11 +106,10 @@ export default function DocumentTemplatesPage({ onMenuToggle }: { onMenuToggle?:
               key={t}
               type="button"
               onClick={() => setSelectedTypeFilter(t)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition-all border ${
-                selectedTypeFilter === t
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition-all border ${selectedTypeFilter === t
                   ? "bg-[#1456f0] text-white border-transparent shadow-xs"
                   : "bg-white/80 hover:bg-white text-slate-600 border-slate-200/80"
-              }`}
+                }`}
             >
               {t === "All" ? "All Documents" : t.toUpperCase()}
             </button>
