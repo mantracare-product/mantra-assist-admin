@@ -901,7 +901,7 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
           <div className="overflow-hidden rounded-2xl border border-white/70 bg-white/40 backdrop-blur-xs shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-white/60 border-b border-slate-200/60 text-[#181e25] uppercase text-[11px] font-bold tracking-wider">
+                <thead className="bg-gradient-to-r from-[#181e25] to-[#2c3e50] text-white uppercase text-[11px] font-bold tracking-wider border-b border-[#181e25]">
                   <tr>
                     <th className="px-6 py-4">Field Label</th>
                     <th className="px-6 py-4">API Key</th>
@@ -1003,7 +1003,7 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
           <div className="overflow-hidden rounded-2xl border border-white/70 bg-white/40 backdrop-blur-xs shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-white/60 border-b border-slate-200/60 text-[#181e25] uppercase text-[11px] font-bold tracking-wider">
+                <thead className="bg-gradient-to-r from-[#181e25] to-[#2c3e50] text-white uppercase text-[11px] font-bold tracking-wider border-b border-[#181e25]">
                   <tr>
                     <th className="px-6 py-4">Section Name</th>
                     <th className="px-6 py-4">Industry</th>

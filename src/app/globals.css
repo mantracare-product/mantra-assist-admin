@@ -97,3 +97,19 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 0.5);
 }
+
+/* Standard Table Header Theme matching sidebar active highlighter */
+thead,
+.table-header-theme {
+  background: linear-gradient(to right, #181e25, #2c3e50) !important;
+  color: #ffffff !important;
+}
+
+thead th,
+.table-header-theme th {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  font-size: 11px !important;
+  letter-spacing: 0.05em !important;
+}

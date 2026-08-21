@@ -56,29 +56,16 @@ export const TopBar: React.FC<TopBarProps> = ({
   return (
     <header className={`w-full mb-6 sm:mb-8 flex flex-col gap-4 ${className}`}>
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        {/* Left Side: Mobile Menu Button & Page Titles */}
-        <div className="flex items-start sm:items-center gap-3">
-          {onMenuToggle && (
-            <button
-              type="button"
-              onClick={onMenuToggle}
-              className="lg:hidden p-2 rounded-xl bg-white/70 backdrop-blur-md border border-white/80 text-[#45515e] hover:text-[#222222] shadow-xs"
-              aria-label="Open sidebar"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+        {/* Page Titles */}
+        <div>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-[#222222]">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              {subtitle}
+            </p>
           )}
-
-          <div>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-[#222222]">
-              {title}
-            </h1>
-            {subtitle && (
-              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                {subtitle}
-              </p>
-            )}
-          </div>
         </div>
 
         {/* Right Side: 4 Filter Dropdowns Row */}

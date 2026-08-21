@@ -9,6 +9,12 @@ export interface NavItem {
   badgeType?: "default" | "success" | "warning" | "info";
 }
 
+export interface NavGroup {
+  id: string;
+  label: string;
+  items: NavItem[];
+}
+
 export interface StatCardData {
   id: string;
   title: string;

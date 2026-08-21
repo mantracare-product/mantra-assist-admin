@@ -11,13 +11,7 @@ import {
   Plus,
   Edit2,
   Trash2,
-  Briefcase,
-  Layers,
-  Sparkles,
-  CheckCircle2,
-  XCircle,
   Tag,
-  Hash,
 } from "lucide-react";
 
 // Types
@@ -29,7 +23,7 @@ export interface IndustryCategory {
   isActive: boolean;
 }
 
-export interface ServiceItem {
+export interface IndustryItem {
   id: string;
   idNumber: number;
   name: string;
@@ -45,7 +39,7 @@ const INITIAL_CATEGORIES: IndustryCategory[] = [
     id: "cat-1",
     idNumber: 8,
     name: "Automobile",
-    description: "Services tied to buying, maintaining, and servicing vehicles.",
+    description: "Services and workflows tied to buying, maintaining, and servicing vehicles.",
     isActive: true,
   },
   {
@@ -60,7 +54,7 @@ const INITIAL_CATEGORIES: IndustryCategory[] = [
     id: "cat-3",
     idNumber: 1,
     name: "Healthcare",
-    description: "All healthcare related services",
+    description: "All healthcare related clinical workflows and patient care specialties.",
     isActive: true,
   },
   {
@@ -96,9 +90,9 @@ const INITIAL_CATEGORIES: IndustryCategory[] = [
   },
 ];
 
-const INITIAL_SERVICES: ServiceItem[] = [
+const INITIAL_INDUSTRIES: IndustryItem[] = [
   {
-    id: "srv-1",
+    id: "ind-1",
     idNumber: 29,
     name: "Accessory/Customization",
     category: "Automobile",
@@ -107,7 +101,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
     isActive: true,
   },
   {
-    id: "srv-2",
+    id: "ind-2",
     idNumber: 51,
     name: "AI/ML Strategy/ Model Development",
     category: "IT/Tech",
@@ -116,7 +110,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
     isActive: true,
   },
   {
-    id: "srv-3",
+    id: "ind-3",
     idNumber: 73,
     name: "App Development",
     category: "IT/Tech",
@@ -125,7 +119,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
     isActive: true,
   },
   {
-    id: "srv-4",
+    id: "ind-4",
     idNumber: 85,
     name: "Automation/Workflow Consultation",
     category: "IT/Tech",
@@ -134,7 +128,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
     isActive: true,
   },
   {
-    id: "srv-5",
+    id: "ind-5",
     idNumber: 46,
     name: "Automobile",
     category: "Automobile",
@@ -143,7 +137,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
     isActive: true,
   },
   {
-    id: "srv-6",
+    id: "ind-6",
     idNumber: 35,
     name: "Cardiologist",
     category: "Healthcare",
@@ -152,7 +146,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
     isActive: true,
   },
   {
-    id: "srv-7",
+    id: "ind-7",
     idNumber: 98,
     name: "Career Coaching",
     category: "Coaching & Advisory",
@@ -161,7 +155,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
     isActive: true,
   },
   {
-    id: "srv-8",
+    id: "ind-8",
     idNumber: 490,
     name: "Cataract",
     category: "Healthcare",
@@ -171,7 +165,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
     isActive: true,
   },
   {
-    id: "srv-9",
+    id: "ind-9",
     idNumber: 82,
     name: "Chatbot/Voice Agent Development",
     category: "IT/Tech",
@@ -180,7 +174,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
     isActive: true,
   },
   {
-    id: "srv-10",
+    id: "ind-10",
     idNumber: 14,
     name: "Clinical Psychologist",
     category: "Healthcare",
@@ -189,7 +183,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
     isActive: true,
   },
   {
-    id: "srv-11",
+    id: "ind-11",
     idNumber: 76,
     name: "Cloud Migration Consultation",
     category: "IT/Tech",
@@ -198,7 +192,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
     isActive: true,
   },
   {
-    id: "srv-12",
+    id: "ind-12",
     idNumber: 45,
     name: "Commercial Real Estates",
     category: "Real Estate",
@@ -208,7 +202,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
     isActive: true,
   },
   {
-    id: "srv-13",
+    id: "ind-13",
     idNumber: 500,
     name: "Contoura Vision",
     category: "Healthcare",
@@ -218,7 +212,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
     isActive: true,
   },
   {
-    id: "srv-14",
+    id: "ind-14",
     idNumber: 75,
     name: "Cybersecurity Assessment",
     category: "IT/Tech",
@@ -227,7 +221,7 @@ const INITIAL_SERVICES: ServiceItem[] = [
     isActive: true,
   },
   {
-    id: "srv-15",
+    id: "ind-15",
     idNumber: 74,
     name: "Data/Infrastructure Audit",
     category: "IT/Tech",
@@ -238,403 +232,273 @@ const INITIAL_SERVICES: ServiceItem[] = [
 ];
 
 export default function IndustryServicesPage({ onMenuToggle }: { onMenuToggle?: () => void }) {
-  const [activeTab, setActiveTab] = useState<"SERVICES" | "INDUSTRY">("SERVICES");
   const [searchQuery, setSearchQuery] = useState("");
-  const [categories, setCategories] = useState<IndustryCategory[]>(INITIAL_CATEGORIES);
-  const [services, setServices] = useState<ServiceItem[]>(INITIAL_SERVICES);
+  const [categories] = useState<IndustryCategory[]>(INITIAL_CATEGORIES);
+  const [industries, setIndustries] = useState<IndustryItem[]>(INITIAL_INDUSTRIES);
 
   // Side Drawer States
-  const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
-  const [isServiceDrawerOpen, setIsServiceDrawerOpen] = useState(false);
+  const [isIndustryDrawerOpen, setIsIndustryDrawerOpen] = useState(false);
+  const [editingIndustryId, setEditingIndustryId] = useState<string | null>(null);
 
-  // Category Form State
-  const [categoryForm, setCategoryForm] = useState({
-    name: "",
-    description: "",
-    isActive: true,
-  });
-
-  // Service Form State
-  const [serviceForm, setServiceForm] = useState({
+  // Industry Form State
+  const [industryForm, setIndustryForm] = useState({
     name: "",
     category: "Healthcare",
     description: "",
     isActive: true,
   });
 
-  // Filtered Services
-  const filteredServices = useMemo(() => {
-    return services.filter((srv) => {
+  // Filtered Industries
+  const filteredIndustries = useMemo(() => {
+    return industries.filter((ind) => {
       const matchSearch =
-        srv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        srv.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        srv.category.toLowerCase().includes(searchQuery.toLowerCase());
+        ind.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        ind.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        ind.category.toLowerCase().includes(searchQuery.toLowerCase());
       return matchSearch;
     });
-  }, [services, searchQuery]);
+  }, [industries, searchQuery]);
 
-  // Filtered Categories
-  const filteredCategories = useMemo(() => {
-    return categories.filter((cat) => {
-      return (
-        cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cat.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    });
-  }, [categories, searchQuery]);
-
-  // Handle create category
-  const handleCreateCategory = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!categoryForm.name.trim()) return;
-
-    const newCat: IndustryCategory = {
-      id: `cat-${Date.now()}`,
-      idNumber: Math.floor(Math.random() * 900) + 10,
-      name: categoryForm.name.trim(),
-      description: categoryForm.description.trim() || "No description provided.",
-      isActive: categoryForm.isActive,
-    };
-
-    setCategories([newCat, ...categories]);
-    setCategoryForm({ name: "", description: "", isActive: true });
-    setIsCategoryDrawerOpen(false);
+  // Handle open industry drawer
+  const handleOpenIndustryDrawer = (item?: IndustryItem) => {
+    if (item) {
+      setEditingIndustryId(item.id);
+      setIndustryForm({
+        name: item.name,
+        category: item.category,
+        description: item.description,
+        isActive: item.isActive,
+      });
+    } else {
+      setEditingIndustryId(null);
+      setIndustryForm({
+        name: "",
+        category: categories[0]?.name || "Healthcare",
+        description: "",
+        isActive: true,
+      });
+    }
+    setIsIndustryDrawerOpen(true);
   };
 
-  // Handle create service
-  const handleCreateService = (e: React.FormEvent) => {
+  // Handle save industry
+  const handleSaveIndustry = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!serviceForm.name.trim()) return;
+    if (!industryForm.name.trim()) return;
 
-    const newSrv: ServiceItem = {
-      id: `srv-${Date.now()}`,
-      idNumber: Math.floor(Math.random() * 900) + 10,
-      name: serviceForm.name.trim(),
-      category: serviceForm.category,
-      description: serviceForm.description.trim() || "No description provided.",
-      isSystemRecord: false,
-      isActive: serviceForm.isActive,
-    };
+    if (editingIndustryId) {
+      setIndustries(
+        industries.map((ind) =>
+          ind.id === editingIndustryId
+            ? {
+                ...ind,
+                name: industryForm.name.trim(),
+                category: industryForm.category,
+                description: industryForm.description.trim() || "No description provided.",
+                isActive: industryForm.isActive,
+              }
+            : ind
+        )
+      );
+    } else {
+      const newInd: IndustryItem = {
+        id: `ind-${Date.now()}`,
+        idNumber: Math.floor(Math.random() * 900) + 10,
+        name: industryForm.name.trim(),
+        category: industryForm.category,
+        description: industryForm.description.trim() || "No description provided.",
+        isSystemRecord: false,
+        isActive: industryForm.isActive,
+      };
+      setIndustries([newInd, ...industries]);
+    }
 
-    setServices([newSrv, ...services]);
-    setServiceForm({ name: "", category: categories[0]?.name || "Healthcare", description: "", isActive: true });
-    setIsServiceDrawerOpen(false);
+    setIndustryForm({ name: "", category: categories[0]?.name || "Healthcare", description: "", isActive: true });
+    setEditingIndustryId(null);
+    setIsIndustryDrawerOpen(false);
+  };
+
+  const handleDeleteIndustry = (indId: string) => {
+    setIndustries(industries.filter((s) => s.id !== indId));
   };
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
       {/* Top Bar */}
       <TopBar
-        title="Industry & Services"
-        subtitle="Manage services, categories, and system configurations."
+        title="Industries"
+        subtitle="Manage industries, domain workflows, and associate them with industry categories."
         showFilters={false}
         onMenuToggle={onMenuToggle}
       />
 
       {/* Main Glass Workspace */}
-      <GlassCard variant="default" rounded="3xl" padding="lg" className="space-y-6">
-        {/* Tab Switcher Segmented Control */}
-        <div className="flex items-center gap-1 p-1 bg-white/60 backdrop-blur-md rounded-2xl border border-white/70 w-fit shadow-xs">
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab("SERVICES");
-              setSearchQuery("");
-            }}
-            className={`
-              px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200
-              ${
-                activeTab === "SERVICES"
-                  ? "bg-[#181e25] text-white shadow-sm"
-                  : "text-slate-500 hover:text-[#222222] hover:bg-white/40"
-              }
-            `}
-          >
-            Services
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab("INDUSTRY");
-              setSearchQuery("");
-            }}
-            className={`
-              px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200
-              ${
-                activeTab === "INDUSTRY"
-                  ? "bg-[#181e25] text-white shadow-sm"
-                  : "text-slate-500 hover:text-[#222222] hover:bg-white/40"
-              }
-            `}
-          >
-            Industry
-          </button>
-        </div>
-
-        {/* Section Heading & Subtitle */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-1">
-          <div>
-            <h2 className="font-display text-xl font-bold text-[#222222]">
-              {activeTab === "SERVICES" ? "Configured Services" : "Service Categories"}
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {activeTab === "SERVICES"
-                ? "Manage individual conversational service workflows, prompts, and domain rules."
-                : "Top-level groupings that link services and plans together."}
-            </p>
+      <GlassCard variant="default" rounded="3xl" padding="lg" className="space-y-5">
+        {/* Action Header: Search Bar & Add Button in one clean row */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search industries by name, category, or description..."
+              className="
+                w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
+                border border-white/80 rounded-2xl placeholder:text-slate-400 text-[#222222]
+                shadow-xs transition-all duration-200
+                focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60 focus:bg-white
+              "
+            />
           </div>
 
-          {/* Action Button: Opens Side Drawer */}
-          {activeTab === "SERVICES" ? (
-            <Pill
-              variant="navy"
-              size="md"
-              icon={<Plus className="w-4 h-4" />}
-              onClick={() => setIsServiceDrawerOpen(true)}
-              className="shadow-sm"
-            >
-              + New Service
-            </Pill>
-          ) : (
-            <Pill
-              variant="navy"
-              size="md"
-              icon={<Plus className="w-4 h-4" />}
-              onClick={() => setIsCategoryDrawerOpen(true)}
-              className="shadow-sm"
-            >
-              + New Category
-            </Pill>
-          )}
+          <Pill
+            variant="navy"
+            size="md"
+            icon={<Plus className="w-4 h-4" />}
+            onClick={() => handleOpenIndustryDrawer()}
+            className="shadow-sm shrink-0 self-start sm:self-auto"
+          >
+            New Industry
+          </Pill>
         </div>
 
-        {/* Search Input Bar */}
-        <div className="relative max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={
-              activeTab === "SERVICES"
-                ? "Search services by name or description..."
-                : "Search categories..."
-            }
-            className="
-              w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
-              border border-white/80 rounded-2xl placeholder:text-slate-400 text-[#222222]
-              shadow-xs transition-all duration-200
-              focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60 focus:bg-white
-            "
-          />
-        </div>
-
-        {/* DATA TABLE (Replaced Cards with Table as requested) */}
-        {activeTab === "SERVICES" ? (
-          <div className="overflow-hidden rounded-2xl border border-white/70 bg-white/40 backdrop-blur-xs shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-white/60 border-b border-slate-200/60 text-[#181e25] uppercase text-[11px] font-bold tracking-wider">
+        {/* INDUSTRIES DATA TABLE */}
+        <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white/50 backdrop-blur-md shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse table-fixed">
+              <thead>
+                <tr className="bg-gradient-to-r from-[#181e25] to-[#2c3e50] text-white">
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-left w-[32%]">
+                    Industry Name
+                  </th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-left w-[28%]">
+                    Industry Category
+                  </th>
+                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[10%]">
+                    ID
+                  </th>
+                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[12%]">
+                    Record Type
+                  </th>
+                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[10%]">
+                    Status
+                  </th>
+                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[8%]">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredIndustries.length === 0 ? (
                   <tr>
-                    <th className="px-6 py-4">Service Name</th>
-                    <th className="px-6 py-4">Category</th>
-                    <th className="px-6 py-4">Description</th>
-                    <th className="px-6 py-4">ID</th>
-                    <th className="px-6 py-4">Record Type</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
+                    <td colSpan={6} className="px-6 py-16 text-center text-slate-400 text-sm">
+                      No industries match your search query.
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100/70">
-                  {filteredServices.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-slate-400 text-sm">
-                        No services match your search query.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredServices.map((srv) => (
-                      <tr
-                        key={srv.id}
-                        className="hover:bg-white/70 transition-colors duration-150 group"
-                      >
-                        <td className="px-6 py-4 font-semibold text-[#222222] whitespace-nowrap">
-                          {srv.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 text-[#1456f0] border border-blue-100 font-medium text-xs">
-                            <Tag className="w-3 h-3" />
-                            {srv.category}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-slate-500 max-w-xs truncate leading-relaxed">
-                          {srv.description}
-                        </td>
-                        <td className="px-6 py-4 text-slate-400 font-mono text-xs whitespace-nowrap">
-                          ID: #{srv.idNumber}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {srv.isSystemRecord ? (
-                            <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase bg-slate-100/80 px-2 py-0.5 rounded-md border border-slate-200/50">
-                              System Record
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-bold tracking-wider text-purple-700 uppercase bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
-                              Custom Record
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {srv.isActive ? (
-                            <span className="inline-flex items-center gap-1 text-emerald-700 text-xs font-semibold">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                              Active
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-slate-400 text-xs font-medium">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                              Inactive
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-[#1456f0] hover:bg-blue-50 transition-colors"
-                              title="Edit Service"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setServices(services.filter((s) => s.id !== srv.id))
-                              }
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                              title="Delete Service"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
-          /* INDUSTRY TABLE */
-          <div className="overflow-hidden rounded-2xl border border-white/70 bg-white/40 backdrop-blur-xs shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-white/60 border-b border-slate-200/60 text-[#181e25] uppercase text-[11px] font-bold tracking-wider">
-                  <tr>
-                    <th className="px-6 py-4">Industry / Category</th>
-                    <th className="px-6 py-4">Description</th>
-                    <th className="px-6 py-4">Attached Services</th>
-                    <th className="px-6 py-4">ID</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100/70">
-                  {filteredCategories.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400 text-sm">
-                        No industry categories match your search query.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredCategories.map((cat) => {
-                      const attachedCount = services.filter(
-                        (s) => s.category === cat.name
-                      ).length;
-                      return (
-                        <tr
-                          key={cat.id}
-                          className="hover:bg-white/70 transition-colors duration-150 group"
+                ) : (
+                  filteredIndustries.map((ind) => (
+                    <tr
+                      key={ind.id}
+                      className="hover:bg-white/80 transition-colors duration-150 group"
+                    >
+                      {/* 1. Industry Name */}
+                      <td className="px-6 py-4 align-middle whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenIndustryDrawer(ind)}
+                          className="font-bold text-sm text-[#181e25] hover:text-[#1456f0] transition-colors text-left group-hover:underline inline-flex items-center gap-1.5"
                         >
-                          <td className="px-6 py-4 font-semibold text-[#222222] whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1456f0] flex items-center justify-center font-bold text-xs border border-blue-100">
-                                {cat.name.charAt(0)}
-                              </div>
-                              <span>{cat.name}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-slate-500 max-w-sm truncate leading-relaxed">
-                            {cat.description}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100/80 text-slate-700 font-medium text-xs border border-slate-200/50">
-                              <Layers className="w-3 h-3 text-slate-400" />
-                              {attachedCount} services
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-slate-400 font-mono text-xs whitespace-nowrap">
-                            ID: #{cat.idNumber}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {cat.isActive ? (
-                              <span className="inline-flex items-center gap-1 text-emerald-700 text-xs font-semibold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                Active
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-slate-400 text-xs font-medium">
-                                <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                                Inactive
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                type="button"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-[#1456f0] hover:bg-blue-50 transition-colors"
-                                title="Edit Category"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setCategories(categories.filter((c) => c.id !== cat.id))
-                                }
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                                title="Delete Category"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                          <span>{ind.name}</span>
+                        </button>
+                      </td>
+
+                      {/* 2. Industry Category */}
+                      <td className="px-6 py-4 align-middle whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50/90 text-[#1456f0] border border-blue-200/70 font-semibold text-xs shadow-2xs">
+                          <Tag className="w-3 h-3 opacity-60" />
+                          {ind.category}
+                        </span>
+                      </td>
+
+                      {/* 3. ID */}
+                      <td className="px-6 py-4 align-middle text-center whitespace-nowrap">
+                        <span className="inline-block px-2.5 py-1 rounded-md bg-slate-100/80 border border-slate-200/60 font-mono text-xs text-slate-600 font-semibold shadow-2xs">
+                          #{ind.idNumber}
+                        </span>
+                      </td>
+
+                      {/* 4. Record Type */}
+                      <td className="px-6 py-4 align-middle text-center whitespace-nowrap">
+                        {ind.isSystemRecord ? (
+                          <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase bg-slate-100/90 px-2.5 py-1 rounded-md border border-slate-200/60 shadow-2xs">
+                            System
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold tracking-wider text-purple-700 uppercase bg-purple-50 px-2.5 py-1 rounded-md border border-purple-200/70 shadow-2xs">
+                            Custom
+                          </span>
+                        )}
+                      </td>
+
+                      {/* 5. Status */}
+                      <td className="px-6 py-4 align-middle text-center whitespace-nowrap">
+                        {ind.isActive ? (
+                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50/90 text-emerald-700 border border-emerald-200/70 text-xs font-semibold shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-400 border border-slate-200 text-xs font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                            Inactive
+                          </span>
+                        )}
+                      </td>
+
+                      {/* 6. Actions */}
+                      <td className="px-6 py-4 align-middle text-center whitespace-nowrap">
+                        <div className="inline-flex items-center justify-center gap-1 bg-white/70 p-1 rounded-xl border border-slate-200/60 shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenIndustryDrawer(ind)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-[#1456f0] hover:bg-blue-50 transition-colors"
+                            title="Edit Industry"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteIndustry(ind.id)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            title="Delete Industry"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
       </GlassCard>
 
-      {/* SIDE DRAWER 1: CREATE SERVICE CATEGORY */}
+      {/* SIDE DRAWER: CREATE / EDIT INDUSTRY */}
       <SideDrawer
-        isOpen={isCategoryDrawerOpen}
-        onClose={() => setIsCategoryDrawerOpen(false)}
-        title="Create Service Category"
-        subtitle="Categories group services and plans together."
+        isOpen={isIndustryDrawerOpen}
+        onClose={() => setIsIndustryDrawerOpen(false)}
+        title={editingIndustryId ? "Edit Industry" : "Create New Industry"}
+        subtitle="Define an industry domain workflow."
         footer={
           <>
             <Pill
               variant="ghost"
               size="md"
               type="button"
-              onClick={() => setIsCategoryDrawerOpen(false)}
+              onClick={() => setIsIndustryDrawerOpen(false)}
             >
               Cancel
             </Pill>
@@ -642,27 +506,27 @@ export default function IndustryServicesPage({ onMenuToggle }: { onMenuToggle?: 
               variant="navy"
               size="md"
               type="button"
-              onClick={handleCreateCategory}
+              onClick={handleSaveIndustry}
             >
-              Create Category
+              {editingIndustryId ? "Update Industry" : "Create Industry"}
             </Pill>
           </>
         }
       >
-        <form onSubmit={handleCreateCategory} className="space-y-5">
-          {/* Category Name */}
+        <form onSubmit={handleSaveIndustry} className="space-y-5">
+          {/* Industry Name */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Category Name
+              Industry Name
             </label>
             <input
               type="text"
               required
-              value={categoryForm.name}
+              value={industryForm.name}
               onChange={(e) =>
-                setCategoryForm({ ...categoryForm, name: e.target.value })
+                setIndustryForm({ ...industryForm, name: e.target.value })
               }
-              placeholder="e.g. Healthcare, Legal, Finance"
+              placeholder="e.g. Cardiologist, App Development, Commercial Real Estate"
               className="
                 w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
                 border border-slate-200/80 rounded-xl placeholder:text-slate-400 text-[#222222]
@@ -671,121 +535,18 @@ export default function IndustryServicesPage({ onMenuToggle }: { onMenuToggle?: 
             />
           </div>
 
-          {/* Description */}
+          {/* Industry Category Select */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Description
-            </label>
-            <textarea
-              rows={4}
-              value={categoryForm.description}
-              onChange={(e) =>
-                setCategoryForm({ ...categoryForm, description: e.target.value })
-              }
-              placeholder="Brief description of this service category..."
-              className="
-                w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
-                border border-slate-200/80 rounded-xl placeholder:text-slate-400 text-[#222222]
-                shadow-xs focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60 focus:bg-white resize-none
-              "
-            />
-          </div>
-
-          {/* Is Active Toggle Switch */}
-          <div className="pt-2 flex items-center justify-between p-3 rounded-2xl bg-white/50 border border-white/80">
-            <div>
-              <span className="text-xs font-semibold text-[#222222] block">
-                Is Active?
-              </span>
-              <span className="text-[11px] text-slate-400">
-                Enable or disable this category across all services
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() =>
-                setCategoryForm({
-                  ...categoryForm,
-                  isActive: !categoryForm.isActive,
-                })
-              }
-              className={`
-                w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40
-                ${categoryForm.isActive ? "bg-[#1456f0]" : "bg-slate-300"}
-              `}
-            >
-              <div
-                className={`
-                  bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200
-                  ${categoryForm.isActive ? "translate-x-6" : "translate-x-0"}
-                `}
-              />
-            </button>
-          </div>
-        </form>
-      </SideDrawer>
-
-      {/* SIDE DRAWER 2: CREATE NEW SERVICE */}
-      <SideDrawer
-        isOpen={isServiceDrawerOpen}
-        onClose={() => setIsServiceDrawerOpen(false)}
-        title="Create New Service"
-        subtitle="Define a new service."
-        footer={
-          <>
-            <Pill
-              variant="ghost"
-              size="md"
-              type="button"
-              onClick={() => setIsServiceDrawerOpen(false)}
-            >
-              Cancel
-            </Pill>
-            <Pill
-              variant="navy"
-              size="md"
-              type="button"
-              onClick={handleCreateService}
-            >
-              Create
-            </Pill>
-          </>
-        }
-      >
-        <form onSubmit={handleCreateService} className="space-y-5">
-          {/* Service Name */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Service Name
-            </label>
-            <input
-              type="text"
-              required
-              value={serviceForm.name}
-              onChange={(e) =>
-                setServiceForm({ ...serviceForm, name: e.target.value })
-              }
-              placeholder="e.g. Healthcare, Finance, Logistics"
-              className="
-                w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
-                border border-slate-200/80 rounded-xl placeholder:text-slate-400 text-[#222222]
-                shadow-xs focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60 focus:bg-white
-              "
-            />
-          </div>
-
-          {/* Service Category Select */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Service Category
+              Industry Category
             </label>
             <CustomSelect
-              value={serviceForm.category}
+              value={industryForm.category}
               onChange={(val) =>
-                setServiceForm({ ...serviceForm, category: val })
+                setIndustryForm({ ...industryForm, category: val })
               }
               options={categories.map((cat) => ({ value: cat.name, label: cat.name }))}
-              label="Select Category"
+              label="Select Industry Category"
             />
           </div>
 
@@ -796,11 +557,11 @@ export default function IndustryServicesPage({ onMenuToggle }: { onMenuToggle?: 
             </label>
             <textarea
               rows={4}
-              value={serviceForm.description}
+              value={industryForm.description}
               onChange={(e) =>
-                setServiceForm({ ...serviceForm, description: e.target.value })
+                setIndustryForm({ ...industryForm, description: e.target.value })
               }
-              placeholder="Describe the secondary characteristics or specific scope..."
+              placeholder="Describe the specific scope, conversational rules, or specialty..."
               className="
                 w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
                 border border-slate-200/80 rounded-xl placeholder:text-slate-400 text-[#222222]
@@ -816,26 +577,26 @@ export default function IndustryServicesPage({ onMenuToggle }: { onMenuToggle?: 
                 Is Active?
               </span>
               <span className="text-[11px] text-slate-400">
-                Allow voice AI agent flows to select this service
+                Allow voice AI agent flows to select this industry
               </span>
             </div>
             <button
               type="button"
               onClick={() =>
-                setServiceForm({
-                  ...serviceForm,
-                  isActive: !serviceForm.isActive,
+                setIndustryForm({
+                  ...industryForm,
+                  isActive: !industryForm.isActive,
                 })
               }
               className={`
                 w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40
-                ${serviceForm.isActive ? "bg-[#1456f0]" : "bg-slate-300"}
+                ${industryForm.isActive ? "bg-[#1456f0]" : "bg-slate-300"}
               `}
             >
               <div
                 className={`
                   bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200
-                  ${serviceForm.isActive ? "translate-x-6" : "translate-x-0"}
+                  ${industryForm.isActive ? "translate-x-6" : "translate-x-0"}
                 `}
               />
             </button>
