@@ -30,6 +30,7 @@ import {
   ChevronDown,
   Tag,
   Menu,
+  X,
 } from "lucide-react";
 
 export default function IndustryTemplatesPage({ onMenuToggle }: { onMenuToggle?: () => void }) {
@@ -242,21 +243,31 @@ export default function IndustryTemplatesPage({ onMenuToggle }: { onMenuToggle?:
 
       {/* Main Glass Studio Hub */}
       <GlassCard variant="default" rounded="3xl" padding="lg" className="space-y-6">
-        {/* Action Header: Search & Filters in One Single Row */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div className="flex flex-1 flex-wrap items-center gap-3">
-            {/* Search Input */}
-            <div className="relative flex-1 min-w-[220px] max-w-md">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search template name, service, or category..."
-                className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-white/70 backdrop-blur-md border border-slate-200/80 rounded-2xl placeholder:text-slate-400 text-[#222222] shadow-xs outline-none focus:ring-2 focus:ring-[#1456f0]/40"
-              />
-            </div>
+        {/* Action Header: Search on left + (Category & Industry Filters + Add Button) on right */}
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 sm:gap-4">
+          {/* Search Input on Left */}
+          <div className="relative flex-1 min-w-[240px] max-w-lg">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search template name, service, or category..."
+              className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-white/70 backdrop-blur-md border border-slate-200/80 rounded-2xl placeholder:text-slate-400 text-[#222222] shadow-xs outline-none focus:ring-2 focus:ring-[#1456f0]/40"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
+          {/* Filters & Action Button Group on Right */}
+          <div className="flex flex-wrap items-center gap-2.5">
             {/* Category Filter Dropdown */}
             <FilterDropdown
               label="Category"
@@ -293,15 +304,14 @@ export default function IndustryTemplatesPage({ onMenuToggle }: { onMenuToggle?:
               ]}
               className="shrink-0"
             />
-          </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+            {/* New Template Button */}
             <Pill
               variant="navy"
               size="md"
               icon={<Plus className="w-4 h-4" />}
               onClick={() => handleOpenStudio()}
-              className="shadow-sm shrink-0"
+              className="shadow-sm shrink-0 self-start sm:self-auto"
             >
               New Template
             </Pill>

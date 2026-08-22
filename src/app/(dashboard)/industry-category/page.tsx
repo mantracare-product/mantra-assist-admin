@@ -10,7 +10,11 @@ import {
   Plus,
   Edit2,
   Trash2,
+  Copy,
+  Menu,
   ChevronDown,
+  X,
+  Check,
 } from "lucide-react";
 
 export interface IndustryCategory {
@@ -100,7 +104,7 @@ const INITIAL_CATEGORIES: IndustryCategory[] = [
     id: "cat-5",
     idNumber: 9,
     name: "IT/Tech",
-    description: "Technical software, cloud architecture, AI automation, and cybersecurity consulting.",
+    description: "Technical software, cloud architecture, automation, and cybersecurity consulting.",
     industries: [
       "AI/ML Strategy/ Model Development",
       "App Development",
@@ -117,12 +121,11 @@ const INITIAL_CATEGORIES: IndustryCategory[] = [
     idNumber: 10,
     name: "Real Estate",
     description:
-      "Property buying, selling, residential leasing, and commercial real estate advisory.",
+      "Services covering property buying, selling, renting, and the advisory work around a deal",
     industries: [
-      "Commercial Real Estates",
-      "Property Buying & Advisory",
-      "Property Management",
-      "Residential Leasing",
+      "Residential Real Estate Brokerage",
+      "Commercial Property Leasing",
+      "Property Management & HOA",
     ],
     isActive: true,
   },
@@ -131,11 +134,11 @@ const INITIAL_CATEGORIES: IndustryCategory[] = [
     idNumber: 5,
     name: "Wellness & Lifestyle",
     description:
-      "Non-clinical practitioners supporting physical health, fitness, yoga, and mindfulness.",
+      "Non-clinical practitioners supporting physical and lifestyle health through nutrition, fitness, yoga, and mindfulness.",
     industries: [
       "Fitness & Personal Training",
-      "Nutrition & Dietetics",
-      "Yoga Coaching",
+      "Holistic Nutrition & Dietetics",
+      "Yoga & Mindfulness Studio",
     ],
     isActive: true,
   },
@@ -146,11 +149,17 @@ export default function IndustryCategoryPage({ onMenuToggle }: { onMenuToggle?: 
   const [categories, setCategories] = useState<IndustryCategory[]>(INITIAL_CATEGORIES);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [activeMenuCategoryId, setActiveMenuCategoryId] = useState<string | null>(null);
+
+  // Expanded categories tracking
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   const toggleCategoryExpand = (catId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setExpandedCategories((prev) => ({ ...prev, [catId]: !prev[catId] }));
+    setExpandedCategories((prev) => ({
+      ...prev,
+      [catId]: !prev[catId],
+    }));
   };
 
   const [categoryForm, setCategoryForm] = useState({
@@ -161,19 +170,23 @@ export default function IndustryCategoryPage({ onMenuToggle }: { onMenuToggle?: 
 
   const filteredCategories = useMemo(() => {
     return categories.filter((cat) => {
-      const matchName = cat.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchDesc = cat.description.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchIndustry = cat.industries.some((ind) =>
-        ind.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      return matchName || matchDesc || matchIndustry;
+      const matchSearch =
+        cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        cat.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        cat.industries.some((ind) => ind.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchSearch;
     });
   }, [categories, searchQuery]);
 
   const handleOpenCreateDrawer = () => {
     setEditingCategoryId(null);
-    setCategoryForm({ name: "", description: "", isActive: true });
+    setCategoryForm({
+      name: "",
+      description: "",
+      isActive: true,
+    });
     setIsDrawerOpen(true);
+    setActiveMenuCategoryId(null);
   };
 
   const handleOpenEditDrawer = (cat: IndustryCategory) => {
@@ -184,6 +197,19 @@ export default function IndustryCategoryPage({ onMenuToggle }: { onMenuToggle?: 
       isActive: cat.isActive,
     });
     setIsDrawerOpen(true);
+    setActiveMenuCategoryId(null);
+  };
+
+  const handleDuplicateCategory = (cat: IndustryCategory) => {
+    const duplicated: IndustryCategory = {
+      ...cat,
+      id: `cat-${Date.now()}`,
+      idNumber: Math.floor(Math.random() * 900) + 10,
+      name: `${cat.name} (Copy)`,
+      industries: [...cat.industries],
+    };
+    setCategories([duplicated, ...categories]);
+    setActiveMenuCategoryId(null);
   };
 
   const handleSaveCategory = (e: React.FormEvent) => {
@@ -221,7 +247,10 @@ export default function IndustryCategoryPage({ onMenuToggle }: { onMenuToggle?: 
   };
 
   const handleDeleteCategory = (catId: string) => {
-    setCategories(categories.filter((c) => c.id !== catId));
+    if (confirm("Are you sure you want to delete this category?")) {
+      setCategories(categories.filter((c) => c.id !== catId));
+      setActiveMenuCategoryId(null);
+    }
   };
 
   return (
@@ -238,20 +267,24 @@ export default function IndustryCategoryPage({ onMenuToggle }: { onMenuToggle?: 
       <GlassCard variant="default" rounded="3xl" padding="lg" className="space-y-6">
         {/* Action Header: Search Bar & Add Button */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-lg">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by category or industry name..."
-              className="
-                w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
-                border border-white/80 rounded-2xl placeholder:text-slate-400 text-[#222222]
-                shadow-xs transition-all duration-200
-                focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60 focus:bg-white
-              "
+              className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-white/70 backdrop-blur-md border border-slate-200/80 rounded-2xl placeholder:text-slate-400 text-[#222222] shadow-xs outline-none focus:ring-2 focus:ring-[#1456f0]/40"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           <Pill
@@ -265,16 +298,16 @@ export default function IndustryCategoryPage({ onMenuToggle }: { onMenuToggle?: 
           </Pill>
         </div>
 
-        {/* Pixel-Perfect Proportional Table of Industry Categories */}
-        <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white/50 backdrop-blur-md shadow-xs">
+        {/* Industry Categories Data Table */}
+        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="bg-gradient-to-r from-[#181e25] to-[#2c3e50] text-white">
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-left w-[24%]">
+                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-left w-[24%]">
                     Category Name
                   </th>
-                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-left w-[36%]">
+                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-left w-[40%]">
                     Attached Industries
                   </th>
                   <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[12%]">
@@ -283,37 +316,37 @@ export default function IndustryCategoryPage({ onMenuToggle }: { onMenuToggle?: 
                   <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[14%]">
                     Status
                   </th>
-                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[14%]">
+                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[10%]">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 text-xs">
                 {filteredCategories.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-16 text-center text-slate-400 text-sm">
-                      No industry categories match your search query.
+                      No industry categories match your search query. Click &quot;New Category&quot; to add one.
                     </td>
                   </tr>
                 ) : (
                   filteredCategories.map((cat) => (
                     <tr
                       key={cat.id}
-                      className="hover:bg-white/80 transition-colors duration-150 group"
+                      className="hover:bg-blue-50/30 transition-colors group"
                     >
-                      {/* 1. Category Name (Vertically Centered) */}
-                      <td className="px-6 py-5 align-middle">
+                      {/* 1. Category Name */}
+                      <td className="px-5 py-4 align-middle">
                         <button
                           type="button"
                           onClick={() => handleOpenEditDrawer(cat)}
-                          className="font-bold text-sm text-[#181e25] hover:text-[#1456f0] transition-colors text-left group-hover:underline block"
+                          className="font-semibold text-xs sm:text-sm text-slate-900 hover:text-[#1456f0] transition-colors text-left group-hover:underline truncate block max-w-full cursor-pointer"
                         >
                           {cat.name}
                         </button>
                       </td>
 
-                      {/* 2. Attached Industries (Vertically Centered with consistent 8px tag gaps) */}
-                      <td className="px-5 py-5 align-middle">
+                      {/* 2. Attached Industries (Original UI Box Structure) */}
+                      <td className="px-5 py-4 align-middle">
                         {cat.industries && cat.industries.length > 0 ? (
                           (() => {
                             const isExpanded = expandedCategories[cat.id];
@@ -328,7 +361,7 @@ export default function IndustryCategoryPage({ onMenuToggle }: { onMenuToggle?: 
                                   <button
                                     type="button"
                                     onClick={(e) => toggleCategoryExpand(cat.id, e)}
-                                    className="absolute top-2.5 right-2.5 text-slate-400 hover:text-[#1456f0] transition-colors p-0.5 rounded-md hover:bg-slate-200/60"
+                                    className="absolute top-2.5 right-2.5 text-slate-400 hover:text-[#1456f0] transition-colors p-0.5 rounded-md hover:bg-slate-200/60 cursor-pointer"
                                     title={isExpanded ? "Collapse" : "Expand all"}
                                   >
                                     <ChevronDown
@@ -356,7 +389,7 @@ export default function IndustryCategoryPage({ onMenuToggle }: { onMenuToggle?: 
                                         <button
                                           type="button"
                                           onClick={(e) => toggleCategoryExpand(cat.id, e)}
-                                          className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#eaf0f7] hover:bg-blue-50 text-[#1456f0] border border-blue-200/60 font-bold text-[10px] uppercase tracking-wider transition-all duration-150 shadow-2xs hover:scale-105"
+                                          className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#eaf0f7] hover:bg-blue-50 text-[#1456f0] border border-blue-200/60 font-bold text-[10px] uppercase tracking-wider transition-all duration-150 shadow-2xs hover:scale-105 cursor-pointer"
                                         >
                                           +{remainingCount} MORE
                                         </button>
@@ -370,7 +403,7 @@ export default function IndustryCategoryPage({ onMenuToggle }: { onMenuToggle?: 
                                     <button
                                       type="button"
                                       onClick={(e) => toggleCategoryExpand(cat.id, e)}
-                                      className="text-[10px] font-bold text-[#1456f0] hover:underline inline-flex items-center gap-1"
+                                      className="text-[10px] font-bold text-[#1456f0] hover:underline inline-flex items-center gap-1 cursor-pointer"
                                     >
                                       Show Less ▲
                                     </button>
@@ -386,47 +419,74 @@ export default function IndustryCategoryPage({ onMenuToggle }: { onMenuToggle?: 
                         )}
                       </td>
 
-                      {/* 3. ID (Vertically & Horizontally Centered) */}
-                      <td className="px-6 py-5 align-middle text-center">
-                        <span className="inline-block px-2.5 py-1 rounded-md bg-slate-100/80 border border-slate-200/60 font-mono text-xs text-slate-600 font-semibold shadow-2xs">
+                      {/* 3. ID */}
+                      <td className="px-4 py-4 align-middle text-center">
+                        <span className="font-mono text-xs text-slate-500 font-medium">
                           #{cat.idNumber}
                         </span>
                       </td>
 
-                      {/* 4. Status (Vertically & Horizontally Centered) */}
-                      <td className="px-6 py-5 align-middle text-center">
-                        {cat.isActive ? (
-                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50/90 text-emerald-700 border border-emerald-200/70 text-xs font-semibold shadow-2xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-400 border border-slate-200 text-xs font-medium">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                            Inactive
-                          </span>
-                        )}
+                      {/* 4. Status */}
+                      <td className="px-4 py-4 align-middle text-center">
+                        <span className="font-medium text-slate-700 text-xs">
+                          {cat.isActive ? "Active" : "Inactive"}
+                        </span>
                       </td>
 
-                      {/* 5. Actions (Vertically & Horizontally Centered) */}
-                      <td className="px-6 py-5 align-middle text-center">
-                        <div className="inline-flex items-center justify-center gap-1 bg-white/70 p-1 rounded-xl border border-slate-200/60 shadow-2xs">
+                      {/* 5. Actions (Hamburger Dropdown) */}
+                      <td className="px-4 py-4 align-middle text-center">
+                        <div className="relative inline-block text-left">
                           <button
                             type="button"
-                            onClick={() => handleOpenEditDrawer(cat)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-[#1456f0] hover:bg-blue-50 transition-colors"
-                            title="Edit Category"
+                            onClick={() =>
+                              setActiveMenuCategoryId(
+                                activeMenuCategoryId === cat.id ? null : cat.id
+                              )
+                            }
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
+                              activeMenuCategoryId === cat.id
+                                ? "bg-[#1456f0] text-white shadow-xs"
+                                : "bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#181e25]"
+                            }`}
+                            title="Actions"
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
+                            <Menu className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteCategory(cat.id)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                            title="Delete Category"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+
+                          {activeMenuCategoryId === cat.id && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-20"
+                                onClick={() => setActiveMenuCategoryId(null)}
+                              />
+                              <div className="absolute right-0 top-full mt-1.5 w-36 bg-white rounded-2xl border border-slate-200 shadow-xl p-1 z-30 animate-in fade-in zoom-in-95 duration-100 space-y-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditDrawer(cat)}
+                                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-100 hover:text-[#1456f0] transition-colors text-left cursor-pointer"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                  <span>Edit</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDuplicateCategory(cat)}
+                                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-100 hover:text-[#1456f0] transition-colors text-left cursor-pointer"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                  <span>Duplicate</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCategory(cat.id)}
+                                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors text-left cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>Delete</span>
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -444,99 +504,67 @@ export default function IndustryCategoryPage({ onMenuToggle }: { onMenuToggle?: 
         onClose={() => setIsDrawerOpen(false)}
         title={editingCategoryId ? "Edit Industry Category" : "Create Industry Category"}
         subtitle="Categories group industries and plans together."
-        footer={
-          <>
-            <Pill
-              variant="ghost"
-              size="md"
-              type="button"
-              onClick={() => setIsDrawerOpen(false)}
-            >
-              Cancel
-            </Pill>
-            <Pill
-              variant="navy"
-              size="md"
-              type="button"
-              onClick={handleSaveCategory}
-            >
-              {editingCategoryId ? "Update Category" : "Create Category"}
-            </Pill>
-          </>
-        }
+        width="lg"
       >
         <form onSubmit={handleSaveCategory} className="space-y-5">
-          {/* Category Name */}
+          {/* Name */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Category Name
-            </label>
+            <label className="text-xs font-bold text-slate-700">Category Name *</label>
             <input
               type="text"
               required
               value={categoryForm.name}
-              onChange={(e) =>
-                setCategoryForm({ ...categoryForm, name: e.target.value })
-              }
-              placeholder="e.g. Healthcare, Legal, Finance"
-              className="
-                w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
-                border border-slate-200/80 rounded-xl placeholder:text-slate-400 text-[#222222]
-                shadow-xs focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60 focus:bg-white
-              "
+              onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+              placeholder="e.g. Legal Services"
+              className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 font-medium"
             />
           </div>
 
           {/* Description */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Description
-            </label>
+            <label className="text-xs font-bold text-slate-700">Description</label>
             <textarea
-              rows={4}
+              rows={3}
               value={categoryForm.description}
-              onChange={(e) =>
-                setCategoryForm({ ...categoryForm, description: e.target.value })
-              }
-              placeholder="Brief description of this industry category..."
-              className="
-                w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
-                border border-slate-200/80 rounded-xl placeholder:text-slate-400 text-[#222222]
-                shadow-xs focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60 focus:bg-white resize-none
-              "
+              onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
+              placeholder="Brief description of the domain..."
+              className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 font-medium resize-none"
             />
           </div>
 
-          {/* Is Active Toggle Switch */}
-          <div className="pt-2 flex items-center justify-between p-3 rounded-2xl bg-white/50 border border-white/80">
+          {/* Status Toggle */}
+          <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200">
             <div>
-              <span className="text-xs font-semibold text-[#222222] block">
-                Is Active?
-              </span>
-              <span className="text-[11px] text-slate-400">
-                Enable or disable this category across all industries
-              </span>
+              <div className="text-xs font-bold text-slate-800">Active Status</div>
+              <div className="text-[11px] text-slate-500">Visible in tenant onboarding</div>
             </div>
             <button
               type="button"
-              onClick={() =>
-                setCategoryForm({
-                  ...categoryForm,
-                  isActive: !categoryForm.isActive,
-                })
-              }
-              className={`
-                w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40
-                ${categoryForm.isActive ? "bg-[#1456f0]" : "bg-slate-300"}
-              `}
+              onClick={() => setCategoryForm({ ...categoryForm, isActive: !categoryForm.isActive })}
+              className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 cursor-pointer ${
+                categoryForm.isActive ? "bg-[#1456f0]" : "bg-slate-300"
+              }`}
             >
               <div
-                className={`
-                  bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200
-                  ${categoryForm.isActive ? "translate-x-6" : "translate-x-0"}
-                `}
+                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
+                  categoryForm.isActive ? "translate-x-5" : "translate-x-0"
+                }`}
               />
             </button>
+          </div>
+
+          {/* Drawer Actions */}
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setIsDrawerOpen(false)}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+            >
+              Cancel
+            </button>
+            <Pill variant="navy" size="md" icon={<Check className="w-3.5 h-3.5 text-emerald-400" />}>
+              Save Category
+            </Pill>
           </div>
         </form>
       </SideDrawer>
