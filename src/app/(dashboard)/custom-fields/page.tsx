@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { TopBar } from "@/components/layout/TopBar";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Pill } from "@/components/ui/Pill";
 import { SideDrawer } from "@/components/ui/SideDrawer";
 import { CustomSelect } from "@/components/ui/CustomSelect";
+import { useIndustryTemplateStore } from "@/lib/industry-template-store";
 import {
   SlidersHorizontal,
   Plus,
@@ -34,6 +35,7 @@ import {
   Package,
   CalendarDays,
   Users,
+  Menu,
 } from "lucide-react";
 
 // Predefined Modules
@@ -293,6 +295,7 @@ export interface CustomField {
   module: ModuleType;
   options?: string[];
   isRequired: boolean;
+  createdAt?: string;
 }
 
 export interface CustomSection {
@@ -305,6 +308,7 @@ export interface CustomSection {
   description?: string;
   fieldIds: string[]; // Ordered list of CustomField IDs
   rowTemplates?: Record<string, string>; // Template choice per row if module is Processes
+  createdAt?: string;
 }
 
 // Initial Sample Data
@@ -414,18 +418,76 @@ const INITIAL_SECTIONS: CustomSection[] = [
   },
 ];
 
+const SECTIONS_STORAGE_KEY = "mantra_custom_sections_v2";
+
 export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () => void }) {
+  const { categories, getIndustriesByCategory } = useIndustryTemplateStore();
+
   const [activeMainTab, setActiveMainTab] = useState<"FIELDS" | "SECTIONS">("FIELDS");
   const [selectedModuleFilter, setSelectedModuleFilter] = useState<string>("All");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("All");
+  const [selectedIndustryFilter, setSelectedIndustryFilter] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
 
   const [fields, setFields] = useState<CustomField[]>(INITIAL_FIELDS);
   const [sections, setSections] = useState<CustomSection[]>(INITIAL_SECTIONS);
 
+  // Available industries dynamically filtered by selected category
+  const availableIndustriesForFilter = useMemo(() => {
+    return getIndustriesByCategory(selectedCategoryFilter);
+  }, [selectedCategoryFilter, getIndustriesByCategory]);
+
+  // Sync sections with shared localStorage & custom event listener
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(SECTIONS_STORAGE_KEY);
+        if (stored) {
+          setSections(JSON.parse(stored));
+        } else {
+          localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(INITIAL_SECTIONS));
+        }
+      } catch (e) {
+        console.error("Error loading sections from localStorage", e);
+      }
+
+      const handleSectionsUpdated = () => {
+        try {
+          const stored = localStorage.getItem(SECTIONS_STORAGE_KEY);
+          if (stored) {
+            setSections(JSON.parse(stored));
+          }
+        } catch (e) {}
+      };
+
+      window.addEventListener("mantra_custom_sections_updated", handleSectionsUpdated);
+      window.addEventListener("storage", handleSectionsUpdated);
+
+      return () => {
+        window.removeEventListener("mantra_custom_sections_updated", handleSectionsUpdated);
+        window.removeEventListener("storage", handleSectionsUpdated);
+      };
+    }
+  }, []);
+
+  const persistSections = (newSections: CustomSection[]) => {
+    setSections(newSections);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(newSections));
+        window.dispatchEvent(new CustomEvent("mantra_custom_sections_updated"));
+      } catch (e) {}
+    }
+  };
+
   // Drawer States
   const [isFieldDrawerOpen, setIsFieldDrawerOpen] = useState(false);
   const [isSectionDrawerOpen, setIsSectionDrawerOpen] = useState(false);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+
+  // Hamburger Action Dropdowns State
+  const [activeFieldActionId, setActiveFieldActionId] = useState<string | null>(null);
+  const [activeSectionActionId, setActiveSectionActionId] = useState<string | null>(null);
 
   // Create Field Form State
   const [fieldForm, setFieldForm] = useState<{
@@ -517,6 +579,7 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
       module: fieldForm.module,
       options: fieldForm.type === "Select (Dropdown)" ? fieldForm.options : undefined,
       isRequired: fieldForm.isRequired,
+      createdAt: new Date().toISOString(),
     };
 
     setFields([newField, ...fields]);
@@ -671,7 +734,7 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
     });
 
     if (editingSectionId) {
-      setSections(
+      persistSections(
         sections.map((sec) =>
           sec.id === editingSectionId
             ? {
@@ -699,8 +762,9 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
         template: sectionForm.module === "Processes" ? sectionForm.template : undefined,
         fieldIds: orderedFieldIds,
         rowTemplates,
+        createdAt: new Date().toISOString(),
       };
-      setSections([newSec, ...sections]);
+      persistSections([newSec, ...sections]);
     }
 
     setIsSectionDrawerOpen(false);
@@ -719,19 +783,33 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
     });
   }, [fields, selectedModuleFilter, searchQuery]);
 
-  // Filtered sections based on search
+  // Filtered sections based on search, category, industry, and module
   const filteredSections = useMemo(() => {
     return sections.filter((s) => {
       const matchModule =
         selectedModuleFilter === "All" || s.module === selectedModuleFilter;
+
+      const matchCategory =
+        selectedCategoryFilter === "All" ||
+        (s.industry && (
+          s.industry.toLowerCase() === selectedCategoryFilter.toLowerCase() ||
+          s.industry.toLowerCase().includes(selectedCategoryFilter.toLowerCase())
+        ));
+
+      const matchIndustry =
+        selectedIndustryFilter === "All" ||
+        (s.service && s.service.toLowerCase() === selectedIndustryFilter.toLowerCase()) ||
+        (s.industry && s.industry.toLowerCase() === selectedIndustryFilter.toLowerCase());
+
       const matchSearch =
         s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (s.industry && s.industry.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (s.service && s.service.toLowerCase().includes(searchQuery.toLowerCase())) ||
         s.module.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchModule && matchSearch;
+
+      return matchModule && matchCategory && matchIndustry && matchSearch;
     });
-  }, [sections, selectedModuleFilter, searchQuery]);
+  }, [sections, selectedModuleFilter, selectedCategoryFilter, selectedIndustryFilter, searchQuery]);
 
   // Module filter & search inside the Create Section Drawer field picker
   const [drawerModuleFilter, setDrawerModuleFilter] = useState<string>("All");
@@ -784,84 +862,62 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
-      {/* Top Bar */}
-      <TopBar
-        title="Custom Fields & Sections"
-        subtitle="Configure dynamic conversation variables, CRM attributes, and modular field sections."
-        showFilters={false}
-        onMenuToggle={onMenuToggle}
-      />
+      {/* Top Header Row with Page Titles on Left and Custom Fields / Sections Toggle on Rightmost Corner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-[#222222]">
+            Custom Fields & Sections
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            Configure dynamic conversation variables, CRM attributes, and modular field sections.
+          </p>
+        </div>
+
+        {/* Rightmost Corner Tab Switcher */}
+        <div className="flex items-center gap-1 p-1 bg-white/60 backdrop-blur-md rounded-2xl border border-white/70 shadow-xs shrink-0 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveMainTab("FIELDS");
+              setSearchQuery("");
+            }}
+            className={`
+              px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer
+              ${
+                activeMainTab === "FIELDS"
+                  ? "bg-[#181e25] text-white shadow-sm"
+                  : "text-slate-500 hover:text-[#222222] hover:bg-white/40"
+              }
+            `}
+          >
+            Custom Fields
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveMainTab("SECTIONS");
+              setSearchQuery("");
+            }}
+            className={`
+              px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer
+              ${
+                activeMainTab === "SECTIONS"
+                  ? "bg-[#181e25] text-white shadow-sm"
+                  : "text-slate-500 hover:text-[#222222] hover:bg-white/40"
+              }
+            `}
+          >
+            Custom Sections
+          </button>
+        </div>
+      </div>
 
       {/* Main Glass Workspace */}
       <GlassCard variant="default" rounded="3xl" padding="lg" className="space-y-5">
-        {/* Top Controls Row: Segmented Tabs on Left, Action Button on Right */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          {/* Main Tabs Segmented Control */}
-          <div className="flex items-center gap-1 p-1 bg-white/60 backdrop-blur-md rounded-2xl border border-white/70 w-fit shadow-xs">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveMainTab("FIELDS");
-                setSearchQuery("");
-              }}
-              className={`
-                px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200
-                ${
-                  activeMainTab === "FIELDS"
-                    ? "bg-[#181e25] text-white shadow-sm"
-                    : "text-slate-500 hover:text-[#222222] hover:bg-white/40"
-                }
-              `}
-            >
-              Custom Fields
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveMainTab("SECTIONS");
-                setSearchQuery("");
-              }}
-              className={`
-                px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200
-                ${
-                  activeMainTab === "SECTIONS"
-                    ? "bg-[#181e25] text-white shadow-sm"
-                    : "text-slate-500 hover:text-[#222222] hover:bg-white/40"
-                }
-              `}
-            >
-              Custom Sections
-            </button>
-          </div>
-
-          {/* Right-Aligned Action Button (single clean plus icon) */}
-          {activeMainTab === "FIELDS" ? (
-            <Pill
-              variant="navy"
-              size="md"
-              icon={<Plus className="w-4 h-4" />}
-              onClick={() => setIsFieldDrawerOpen(true)}
-              className="shadow-sm shrink-0 self-start sm:self-auto"
-            >
-              Add Custom Field
-            </Pill>
-          ) : (
-            <Pill
-              variant="navy"
-              size="md"
-              icon={<Plus className="w-4 h-4" />}
-              onClick={() => handleOpenSectionDrawer()}
-              className="shadow-sm shrink-0 self-start sm:self-auto"
-            >
-              Create Section
-            </Pill>
-          )}
-        </div>
-
-        {/* Search Bar + Module Filter Dropdown in the SAME ROW */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+        {/* Action Header: Search Bar on Left + Dynamic Filters & Action Button on Right */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           {/* Search Input */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -869,30 +925,95 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={
                 activeMainTab === "FIELDS"
-                  ? "Search custom fields by label, key, or module..."
+                  ? "Search custom fields..."
                   : "Search custom sections..."
               }
               className="
-                w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-white/70 backdrop-blur-md
-                border border-white/80 rounded-2xl placeholder:text-slate-400 text-[#222222]
+                w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-white/70 backdrop-blur-md
+                border border-slate-200/80 rounded-2xl placeholder:text-slate-400 text-[#222222]
                 shadow-xs transition-all duration-200
                 focus:outline-none focus:ring-2 focus:ring-[#1456f0]/40 focus:border-[#1456f0]/60 focus:bg-white
               "
             />
           </div>
 
-          {/* Module Filter Dropdown with CustomSelect */}
-          <div className="w-48 shrink-0">
-            <CustomSelect
-              value={selectedModuleFilter}
-              onChange={(val) => setSelectedModuleFilter(val)}
-              options={[
-                { value: "All", label: "All Modules" },
-                ...MODULES.map((m) => ({ value: m, label: m })),
-              ]}
-              label="Module Filter"
-              placeholder="All Modules"
-            />
+          {/* Right Side Filters & Action Button */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* When CUSTOM SECTIONS is active: Show Industry Category & Industry Filters */}
+            {activeMainTab === "SECTIONS" && (
+              <>
+                {/* 1. Category Filter */}
+                <div className="w-40 shrink-0">
+                  <CustomSelect
+                    value={selectedCategoryFilter}
+                    onChange={(val) => {
+                      setSelectedCategoryFilter(val);
+                      setSelectedIndustryFilter("All");
+                    }}
+                    options={[
+                      { value: "All", label: "All Categories" },
+                      ...categories.map((c) => ({ value: c.name, label: c.name })),
+                    ]}
+                    label="Industry Category"
+                    placeholder="All Categories"
+                  />
+                </div>
+
+                {/* 2. Industry Filter */}
+                <div className="w-40 shrink-0">
+                  <CustomSelect
+                    value={selectedIndustryFilter}
+                    onChange={(val) => setSelectedIndustryFilter(val)}
+                    options={[
+                      { value: "All", label: "All Industries" },
+                      ...availableIndustriesForFilter.map((ind) => ({
+                        value: ind.name,
+                        label: ind.name,
+                      })),
+                    ]}
+                    label="Industry"
+                    placeholder="All Industries"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Module Filter Dropdown */}
+            <div className="w-38 shrink-0">
+              <CustomSelect
+                value={selectedModuleFilter}
+                onChange={(val) => setSelectedModuleFilter(val)}
+                options={[
+                  { value: "All", label: "All Modules" },
+                  ...MODULES.map((m) => ({ value: m, label: m })),
+                ]}
+                label="Module Filter"
+                placeholder="All Modules"
+              />
+            </div>
+
+            {/* Right-Aligned Action Button */}
+            {activeMainTab === "FIELDS" ? (
+              <Pill
+                variant="navy"
+                size="md"
+                icon={<Plus className="w-4 h-4" />}
+                onClick={() => setIsFieldDrawerOpen(true)}
+                className="shadow-sm shrink-0"
+              >
+                Add Field
+              </Pill>
+            ) : (
+              <Pill
+                variant="navy"
+                size="md"
+                icon={<Plus className="w-4 h-4" />}
+                onClick={() => handleOpenSectionDrawer()}
+                className="shadow-sm shrink-0"
+              >
+                Create Section
+              </Pill>
+            )}
           </div>
         </div>
 
@@ -908,13 +1029,14 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
                     <th className="px-6 py-4">Module</th>
                     <th className="px-6 py-4">Data Type</th>
                     <th className="px-6 py-4">Requirement</th>
+                    <th className="px-6 py-4">Created On</th>
                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/70">
                   {filteredFields.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400 text-sm">
+                      <td colSpan={7} className="px-6 py-12 text-center text-slate-400 text-sm">
                         No custom fields found for this module or query.
                       </td>
                     </tr>
@@ -933,12 +1055,12 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2.5 py-1 rounded-full bg-slate-100/80 border border-slate-200/50 text-[#45515e] font-medium text-xs">
+                          <span className="font-semibold text-xs text-[#181e25]">
                             {field.module}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2.5 py-1 rounded-full bg-white/80 border border-slate-200/60 text-xs font-medium text-[#45515e]">
+                          <span className="font-medium text-xs text-slate-600">
                             {field.type}
                             {field.options && field.options.length > 0 && (
                               <span className="text-[10px] text-slate-400 ml-1">
@@ -948,47 +1070,88 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {field.isRequired ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 px-2.5 py-0.5 rounded-full">
-                              Required
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 bg-slate-100/70 px-2.5 py-0.5 rounded-full">
-                              Optional
-                            </span>
-                          )}
+                          <span className="font-medium text-xs text-slate-600">
+                            {field.isRequired ? "Required" : "Optional"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="font-medium text-xs text-slate-600">
+                            {field.createdAt
+                              ? new Date(field.createdAt).toLocaleDateString("en-US", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                              : "12 Jan 2026"}
+                          </span>
                         </td>
                         <td className="px-6 py-4 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="relative inline-block text-left">
                             <button
                               type="button"
-                              onClick={() => {
-                                setFieldForm({
-                                  name: field.name,
-                                  key: field.key,
-                                  type: field.type,
-                                  module: field.module,
-                                  isRequired: field.isRequired,
-                                  options: field.options || [],
-                                  newOptionInput: "",
-                                });
-                                setIsFieldDrawerOpen(true);
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveFieldActionId(activeFieldActionId === field.id ? null : field.id);
                               }}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-[#1456f0] hover:bg-blue-50 transition-colors"
-                              title="Edit Field"
+                              className={`p-2 rounded-xl border transition-all ${
+                                activeFieldActionId === field.id
+                                  ? "bg-[#181e25] text-white border-transparent shadow-xs"
+                                  : "bg-white/80 hover:bg-white text-slate-600 border-slate-200/80 hover:border-slate-300 shadow-2xs"
+                              }`}
+                              title="More Options"
                             >
-                              <Edit2 className="w-3.5 h-3.5" />
+                              <Menu className="w-4 h-4" />
                             </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setFields(fields.filter((f) => f.id !== field.id))
-                              }
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                              title="Delete Field"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+
+                            {activeFieldActionId === field.id && (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-40 cursor-default"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveFieldActionId(null);
+                                  }}
+                                />
+                                <div className="absolute right-0 top-full mt-1.5 w-40 rounded-2xl bg-white border border-slate-200/90 shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveFieldActionId(null);
+                                      setFieldForm({
+                                        name: field.name,
+                                        key: field.key,
+                                        type: field.type,
+                                        module: field.module,
+                                        isRequired: field.isRequired,
+                                        options: field.options || [],
+                                        newOptionInput: "",
+                                      });
+                                      setIsFieldDrawerOpen(true);
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-[#1456f0] hover:bg-blue-50/80 rounded-xl transition-colors text-left"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5 text-slate-400" />
+                                    <span>Edit Field</span>
+                                  </button>
+
+                                  <div className="h-px bg-slate-100 my-1" />
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveFieldActionId(null);
+                                      if (confirm(`Delete field "${field.name}"?`)) {
+                                        setFields(fields.filter((f) => f.id !== field.id));
+                                      }
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50/80 rounded-xl transition-colors text-left"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                                    <span>Delete Field</span>
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -999,7 +1162,7 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
             </div>
           </div>
         ) : (
-          /* TAB 2: CUSTOM SECTIONS TABLE (With Industry & Service badges) */
+          /* TAB 2: CUSTOM SECTIONS TABLE */
           <div className="overflow-hidden rounded-2xl border border-white/70 bg-white/40 backdrop-blur-xs shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
@@ -1010,13 +1173,14 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
                     <th className="px-6 py-4">Service</th>
                     <th className="px-6 py-4">Target Module</th>
                     <th className="px-6 py-4">Field Count</th>
+                    <th className="px-6 py-4">Created On</th>
                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/70">
                   {filteredSections.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400 text-sm">
+                      <td colSpan={7} className="px-6 py-12 text-center text-slate-400 text-sm">
                         No custom sections created yet for this module.
                       </td>
                     </tr>
@@ -1026,47 +1190,96 @@ export default function CustomFieldsPage({ onMenuToggle }: { onMenuToggle?: () =
                         key={sec.id}
                         className="hover:bg-white/70 transition-colors duration-150 group"
                       >
-                        <td className="px-6 py-4 font-semibold text-[#222222] whitespace-nowrap">
+                        <td className="px-6 py-4 font-bold text-sm text-[#181e25] whitespace-nowrap">
                           {sec.name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2.5 py-0.5 rounded-md bg-blue-50 border border-blue-200/60 text-[#1456f0] font-semibold text-xs">
+                          <span className="font-semibold text-xs text-[#181e25]">
                             {sec.industry || "General"}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2.5 py-0.5 rounded-md bg-slate-100/80 border border-slate-200/50 text-[#45515e] font-medium text-xs">
+                          <span className="font-medium text-xs text-slate-600">
                             {sec.service || "—"}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2.5 py-1 rounded-full bg-slate-100/80 border border-slate-200/50 text-[#45515e] font-medium text-xs">
+                          <span className="font-semibold text-xs text-[#181e25]">
                             {sec.module}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-medium">
                           {sec.fieldIds.length} fields
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="font-medium text-xs text-slate-600">
+                            {sec.createdAt
+                              ? new Date(sec.createdAt).toLocaleDateString("en-US", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                              : "12 Jan 2026"}
+                          </span>
+                        </td>
                         <td className="px-6 py-4 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="relative inline-block text-left">
                             <button
                               type="button"
-                              onClick={() => handleOpenSectionDrawer(sec)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-[#1456f0] hover:bg-blue-50 transition-colors"
-                              title="Edit Section"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveSectionActionId(activeSectionActionId === sec.id ? null : sec.id);
+                              }}
+                              className={`p-2 rounded-xl border transition-all ${
+                                activeSectionActionId === sec.id
+                                  ? "bg-[#181e25] text-white border-transparent shadow-xs"
+                                  : "bg-white/80 hover:bg-white text-slate-600 border-slate-200/80 hover:border-slate-300 shadow-2xs"
+                              }`}
+                              title="More Options"
                             >
-                              <Edit2 className="w-3.5 h-3.5" />
+                              <Menu className="w-4 h-4" />
                             </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setSections(sections.filter((s) => s.id !== sec.id))
-                              }
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                              title="Delete Section"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+
+                            {activeSectionActionId === sec.id && (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-40 cursor-default"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveSectionActionId(null);
+                                  }}
+                                />
+                                <div className="absolute right-0 top-full mt-1.5 w-40 rounded-2xl bg-white border border-slate-200/90 shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveSectionActionId(null);
+                                      handleOpenSectionDrawer(sec);
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-[#1456f0] hover:bg-blue-50/80 rounded-xl transition-colors text-left"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5 text-slate-400" />
+                                    <span>Edit Section</span>
+                                  </button>
+
+                                  <div className="h-px bg-slate-100 my-1" />
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveSectionActionId(null);
+                                      if (confirm(`Delete section "${sec.name}"?`)) {
+                                        persistSections(sections.filter((s) => s.id !== sec.id));
+                                      }
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50/80 rounded-xl transition-colors text-left"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                                    <span>Delete Section</span>
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>

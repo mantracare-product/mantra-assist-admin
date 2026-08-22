@@ -181,14 +181,25 @@ export default function IndustryTemplatesPage({ onMenuToggle }: { onMenuToggle?:
           {
             id: `doc-1-${Date.now()}`,
             industryId: `ind-${Date.now()}`,
-            title: "General Service FAQ & Policies",
-            docType: "faq",
-            tags: ["General"],
+            industryName: "New Industry",
+            name: "Client Intake & Service Authorization Agreement",
+            title: "Client Intake & Service Authorization Agreement",
+            description: "Standard service authorization, terms of engagement, and consent document.",
+            creationMethod: "custom",
+            contentHtml: `<div style="padding: 20px; font-family: sans-serif;"><h2>Service Agreement</h2><p>Client: {{client_name}}</p><p>Doc #: {{doc_number}}</p></div>`,
+            extractedFields: [
+              { placeholder: "{{client_name}}", mappedVariable: "client_name", label: "Client Name", fieldSource: "system" },
+              { placeholder: "{{doc_number}}", mappedVariable: "document_number", label: "Document Number", fieldSource: "system" },
+            ],
+            autoNumbering: {
+              enabled: true,
+              prefix: "DOC-",
+              sequenceDigits: 4,
+              currentNumber: 1001,
+              suffix: "-2026",
+            },
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            keyQueryTriggers: ["What are your office hours?"],
-            suggestedAnswers: "Our standard office hours are 9:00 AM to 5:00 PM Monday through Friday.",
-            markdownContent: `### Office Hours & Contact\n\nMonday - Friday, 9am - 5pm.`,
           },
         ],
         defaultServices: [
@@ -303,20 +314,20 @@ export default function IndustryTemplatesPage({ onMenuToggle }: { onMenuToggle?:
             <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="bg-gradient-to-r from-[#181e25] to-[#2c3e50] text-white">
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-left w-[26%]">
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-left w-[24%]">
                     Template Name
                   </th>
-                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-left w-[18%]">
+                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-left w-[16%]">
                     Industry
                   </th>
-                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-left w-[18%]">
+                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-left w-[16%]">
                     Industry Category
                   </th>
-                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-left w-[26%]">
+                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-left w-[24%]">
                     Stages
                   </th>
-                  <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[6%]">
-                    Status
+                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-left w-[14%]">
+                    Created On
                   </th>
                   <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center w-[6%]">
                     Actions
@@ -431,22 +442,20 @@ export default function IndustryTemplatesPage({ onMenuToggle }: { onMenuToggle?:
                           )}
                         </td>
 
-                        {/* 5. Status */}
-                        <td className="px-4 py-5 align-middle text-center">
-                          {b.status === "published" ? (
-                            <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50/90 text-emerald-700 border border-emerald-200/70 text-xs font-semibold shadow-2xs">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              Active
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-400 border border-slate-200 text-xs font-medium">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                              Inactive
-                            </span>
-                          )}
+                        {/* 5. Created On */}
+                        <td className="px-5 py-5 align-middle">
+                          <span className="font-semibold text-xs text-slate-600">
+                            {b.createdAt
+                              ? new Date(b.createdAt).toLocaleDateString("en-US", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                              : "12 Jan 2026"}
+                          </span>
                         </td>
 
-                        {/* 6. Actions (Hamburger Dropdown) */}
+                        {/* 5. Actions (Hamburger Dropdown) */}
                         <td className="px-4 py-5 align-middle text-center">
                           <div className="relative inline-block text-left">
                             <button
@@ -495,18 +504,6 @@ export default function IndustryTemplatesPage({ onMenuToggle }: { onMenuToggle?:
                                     <span>Edit Template</span>
                                   </button>
 
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setActiveActionDropdownId(null);
-                                      setActiveMainTab("provisioning_tester");
-                                    }}
-                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-emerald-700 hover:bg-emerald-50/80 rounded-xl transition-colors text-left"
-                                  >
-                                    <Zap className="w-3.5 h-3.5 text-amber-500" />
-                                    <span>Test Provisioning</span>
-                                  </button>
-
                                   <div className="h-px bg-slate-100 my-1" />
 
                                   <button
@@ -541,10 +538,15 @@ export default function IndustryTemplatesPage({ onMenuToggle }: { onMenuToggle?:
       {isStudioOpen && selectedBundle && (
         <MasterBundleStudioDrawer
           isOpen={isStudioOpen}
-          onClose={() => setIsStudioOpen(false)}
+          onClose={() => {
+            setIsStudioOpen(false);
+            setSelectedBundle(null);
+          }}
           bundle={selectedBundle}
           onSave={(saved) => {
             saveBundle(saved);
+            setIsStudioOpen(false);
+            setSelectedBundle(null);
           }}
         />
       )}

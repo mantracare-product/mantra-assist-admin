@@ -18,83 +18,73 @@ import {
 export const SEED_CATEGORIES: IndustryCategory[] = [
   {
     id: 'cat-healthcare',
-    name: 'Healthcare & Medical',
-    slug: 'healthcare-medical',
-    description: 'Clinical workflows, HIPAA compliant patient intake, and specialist care journeys.',
+    name: 'Healthcare',
+    slug: 'healthcare',
+    description: 'All healthcare related services',
     icon: 'Stethoscope',
     displayOrder: 1,
     isActive: true,
-    industriesCount: 2,
-  },
-  {
-    id: 'cat-legal',
-    name: 'Legal & Professional',
-    slug: 'legal-professional',
-    description: '24/7 client intake, conflict checking, retainer agreements, and case qualification.',
-    icon: 'Scale',
-    displayOrder: 2,
-    isActive: true,
-    industriesCount: 1,
-  },
-  {
-    id: 'cat-realestate',
-    name: 'Real Estate & Property',
-    slug: 'real-estate-property',
-    description: 'Fast buyer/seller lead response, property showings, and escrow inquiry workflows.',
-    icon: 'Home',
-    displayOrder: 3,
-    isActive: true,
-    industriesCount: 1,
-  },
-  {
-    id: 'cat-homeservices',
-    name: 'Home Services & Contracting',
-    slug: 'home-services-contracting',
-    description: 'On-demand dispatch, emergency breakdown diagnostics, and quoting flows.',
-    icon: 'Wrench',
-    displayOrder: 4,
-    isActive: true,
-    industriesCount: 1,
+    industriesCount: 24,
   },
   {
     id: 'cat-auto',
-    name: 'Automotive & Transport',
-    slug: 'automotive-transport',
-    description: 'Dealership sales inquiries, routine service schedules, and repair authorizations.',
+    name: 'Automobile',
+    slug: 'automobile',
+    description: 'Services tied to buying, maintaining, and servicing vehicles.',
     icon: 'Car',
-    displayOrder: 5,
+    displayOrder: 2,
     isActive: true,
-    industriesCount: 1,
-  },
-  {
-    id: 'cat-tech',
-    name: 'IT & Cloud Services',
-    slug: 'it-cloud-services',
-    description: 'Technical scoping, AI/ML consultation, and infrastructure audit pipelines.',
-    icon: 'Cpu',
-    displayOrder: 6,
-    isActive: true,
-    industriesCount: 1,
+    industriesCount: 4,
   },
   {
     id: 'cat-coaching',
     name: 'Coaching & Advisory',
     slug: 'coaching-advisory',
-    description: 'Executive mentorship, wealth discovery, and mindset growth consultations.',
+    description: 'Professional coaches and advisors guiding clients on personal, financial, or legal matters outside clinical care.',
     icon: 'Sparkles',
-    displayOrder: 7,
+    displayOrder: 3,
     isActive: true,
-    industriesCount: 1,
+    industriesCount: 3,
   },
   {
     id: 'cat-wellness',
     name: 'Wellness & Lifestyle',
     slug: 'wellness-lifestyle',
-    description: 'Fitness assessments, holistic nutrition, and personal wellness coaching.',
+    description: 'Non-clinical practitioners supporting physical and lifestyle health through nutrition, fitness, yoga, and mindfulness.',
     icon: 'Activity',
-    displayOrder: 8,
+    displayOrder: 4,
     isActive: true,
-    industriesCount: 1,
+    industriesCount: 3,
+  },
+  {
+    id: 'cat-realestate',
+    name: 'Real Estate',
+    slug: 'real-estate',
+    description: 'Services covering property buying, selling, renting, and the advisory work around a deal.',
+    icon: 'Home',
+    displayOrder: 5,
+    isActive: true,
+    industriesCount: 3,
+  },
+  {
+    id: 'cat-household',
+    name: 'Household Care',
+    slug: 'household-care',
+    description: "On-demand visits where a professional comes to the client's home to fix, install, clean, or improve something.",
+    icon: 'Wrench',
+    displayOrder: 6,
+    isActive: true,
+    industriesCount: 4,
+  },
+  {
+    id: 'cat-tech',
+    name: 'IT/Tech',
+    slug: 'it-tech',
+    description: 'IT/Tech related services',
+    icon: 'Cpu',
+    displayOrder: 7,
+    isActive: true,
+    industriesCount: 7,
   },
 ];
 
@@ -435,71 +425,116 @@ export const SEED_BUNDLES: IndustryStarterBundle[] = [
         id: 'doc-den-01',
         industryId: 'ind-dental',
         industryName: 'Dental Practice',
-        title: 'Dental Insurance, PPO Networks & Copay Policy FAQ',
-        docType: 'faq',
-        tags: ['Dental', 'Insurance', 'Inbound AI', 'Copay', 'Financing'],
+        serviceId: 'srv-den-1',
+        serviceName: 'Routine Hygiene Cleaning & Exam',
+        name: 'Patient Informed Consent & Treatment Authorization',
+        title: 'Patient Informed Consent & Treatment Authorization',
+        description: 'Mandatory clinical consent and treatment agreement for dental procedures, local anesthesia, and diagnostic imaging.',
+        creationMethod: 'custom',
+        sourceFileName: 'Dental_Patient_Consent_Standard.docx',
+        autoNumbering: {
+          enabled: true,
+          prefix: 'DEN-CON-',
+          sequenceDigits: 4,
+          currentNumber: 1042,
+          suffix: '-2026',
+        },
+        extractedFields: [
+          { placeholder: '{{patient_name}}', mappedVariable: 'client_name', label: 'Patient Full Name', fieldSource: 'system' },
+          { placeholder: '{{patient_dob}}', mappedVariable: 'custom_field_dob', label: 'Date of Birth', fieldSource: 'custom' },
+          { placeholder: '{{treatment_date}}', mappedVariable: 'appointment_date', label: 'Treatment Date', fieldSource: 'system' },
+          { placeholder: '{{service_name}}', mappedVariable: 'service_name', label: 'Procedure Name', fieldSource: 'system' },
+          { placeholder: '{{doctor_name}}', mappedVariable: 'assigned_provider', label: 'Treating Dentist', fieldSource: 'system' },
+          { placeholder: '{{doc_number}}', mappedVariable: 'document_number', label: 'Document Number', fieldSource: 'system' },
+        ],
+        contentHtml: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1e293b; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+  <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #1456f0; padding-bottom: 16px; margin-bottom: 20px;">
+    <div>
+      <h2 style="margin: 0; color: #0f172a; font-size: 20px; font-weight: 800;">DENTAL TREATMENT INFORMED CONSENT</h2>
+      <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Clinical Reference Document & Patient Authorization</p>
+    </div>
+    <div style="text-align: right;">
+      <span style="display: inline-block; background: #eff6ff; color: #1456f0; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid #bfdbfe;">
+        Doc #: {{doc_number}}
+      </span>
+      <p style="margin: 4px 0 0 0; font-size: 11px; color: #94a3b8;">Date: {{treatment_date}}</p>
+    </div>
+  </div>
+
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
+    <tr style="background: #f8fafc;">
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; width: 25%; font-weight: bold; color: #475569;">Patient Name:</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; width: 25%; color: #0f172a;">{{patient_name}}</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; width: 25%; font-weight: bold; color: #475569;">Date of Birth:</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; width: 25%; color: #0f172a;">{{patient_dob}}</td>
+    </tr>
+    <tr style="background: #ffffff;">
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold; color: #475569;">Scheduled Service:</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; color: #0f172a;">{{service_name}}</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold; color: #475569;">Treating Clinician:</td>
+      <td style="padding: 8px 12px; border: 1px solid #e2e8f0; color: #0f172a;">{{doctor_name}}</td>
+    </tr>
+  </table>
+
+  <h4 style="color: #0f172a; margin: 16px 0 8px 0; font-size: 14px;">1. Treatment Acknowledgment & Consent</h4>
+  <p style="font-size: 12px; color: #475569; margin-bottom: 12px;">
+    I hereby authorize Dr. <strong>{{doctor_name}}</strong> and designated clinical dental assistants to perform the examination, dental diagnostics, administration of local anesthesia, and procedural treatments described under <strong>{{service_name}}</strong>.
+  </p>
+
+  <h4 style="color: #0f172a; margin: 16px 0 8px 0; font-size: 14px;">2. Risks & Clinical Considerations</h4>
+  <p style="font-size: 12px; color: #475569; margin-bottom: 12px;">
+    I understand that dental procedures carry inherent risks including temporary numbness, sensitivity to temperature, swelling, and localized discomfort. Alternative treatment options have been explained to my full satisfaction.
+  </p>
+
+  <div style="margin-top: 30px; padding-top: 16px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between;">
+    <div style="width: 45%;">
+      <p style="font-size: 11px; color: #64748b; margin-bottom: 24px;">Patient / Legal Guardian Signature:</p>
+      <div style="border-bottom: 1px solid #334155; width: 100%;"></div>
+      <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Authorized Signatory: {{patient_name}}</p>
+    </div>
+    <div style="width: 45%;">
+      <p style="font-size: 11px; color: #64748b; margin-bottom: 24px;">Clinician Verification & Date:</p>
+      <div style="border-bottom: 1px solid #334155; width: 100%;"></div>
+      <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Verified by: {{doctor_name}} on {{treatment_date}}</p>
+    </div>
+  </div>
+</div>`,
         createdAt: '2026-01-08T09:00:00Z',
         updatedAt: '2026-02-01T10:00:00Z',
-        keyQueryTriggers: [
-          'Do you take Delta Dental?',
-          'What insurance plans do you accept?',
-          'How much does a routine cleaning cost out of pocket?',
-          'Do you have payment plans or CareCredit?',
-          'Is sedation dentistry covered by insurance?',
-        ],
-        suggestedAnswers: 'We accept most major PPO dental insurances including Delta Dental, MetLife, Guardian, Cigna, and Aetna. For self-pay patients, preventive cleanings start at $120. We offer 0% interest financing through CareCredit.',
-        escalationRules: 'If patient asks for complex out-of-network pre-authorization, transfer to billing coordinator.',
-        markdownContent: `### Dental Insurance & Financing Policy
-
-#### Accepted PPO Insurance Carriers
-Our practice is in-network with the following major providers:
-- **Delta Dental** (Premier & PPO)
-- **MetLife Dental**
-- **Cigna Dental PPO**
-- **Aetna Dental Network**
-- **Guardian & UnitedHealthcare Dental**
-
-#### Out-of-Pocket & Self-Pay Pricing
-For patients without dental insurance, we offer transparent bundled rates:
-1. **New Patient Special**: $149 (Comprehensive exam, full digital X-rays, standard prophylaxis cleaning).
-2. **Routine Recall Cleaning**: $120.
-3. **Deep Cleaning (Scaling & Root Planing)**: $225 per quadrant.
-4. **Emergency Exam & Palliative Treatment**: $95.
-
-#### Financing & Payment Plans
-- We accept CareCredit and Sunbit financing with 6-month and 12-month 0% APR options.
-- Major credit cards (Visa, MasterCard, Amex) and HSA/FSA cards are fully accepted.`,
       },
       {
         id: 'doc-den-02',
         industryId: 'ind-dental',
         industryName: 'Dental Practice',
-        title: 'Post-Operative Care Guidelines for Extractions, Fillings & Whitening',
-        docType: 'aftercare',
-        tags: ['Aftercare', 'Extractions', 'Fillings', 'Whitening', 'Recovery'],
+        serviceId: 'srv-den-2',
+        serviceName: 'Emergency Dental Consultation',
+        name: 'HIPAA Privacy Notice & Medical History Disclosure',
+        title: 'HIPAA Privacy Notice & Medical History Disclosure',
+        description: 'Federal HIPAA compliance acknowledgment, protected health information (PHI) electronic handling authorization.',
+        creationMethod: 'import_doc',
+        sourceFileName: 'HIPAA_Consent_Release.docx',
+        autoNumbering: {
+          enabled: true,
+          prefix: 'DEN-HIPAA-',
+          sequenceDigits: 4,
+          currentNumber: 2018,
+          suffix: '-2026',
+        },
+        extractedFields: [
+          { placeholder: '{{patient_name}}', mappedVariable: 'client_name', label: 'Patient Name', fieldSource: 'system' },
+          { placeholder: '{{patient_phone}}', mappedVariable: 'client_phone', label: 'Contact Phone', fieldSource: 'system' },
+          { placeholder: '{{doc_number}}', mappedVariable: 'document_number', label: 'Document Number', fieldSource: 'system' },
+        ],
+        contentHtml: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1e293b; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+  <div style="border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px;">
+    <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 800;">HIPAA PRIVACY PRACTICES ACKNOWLEDGMENT</h2>
+    <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Notice of Protected Health Information (PHI) Handling | Reference: {{doc_number}}</p>
+  </div>
+  <p style="font-size: 13px; color: #334155;">I acknowledge that I have received and reviewed the Notice of Privacy Practices for dental care, outlining how my clinical records, radiography, and billing records are stored and protected under HIPAA law.</p>
+  <p style="font-size: 13px; color: #334155;"><strong>Patient Name:</strong> {{patient_name}} &nbsp;|&nbsp; <strong>Contact Phone:</strong> {{patient_phone}}</p>
+</div>`,
         createdAt: '2026-01-09T09:00:00Z',
         updatedAt: '2026-02-05T10:00:00Z',
-        keyQueryTriggers: [
-          'What can I eat after tooth extraction?',
-          'Can I drink through a straw after extraction?',
-          'My filling feels sensitive to cold, is that normal?',
-          'What should I do if the extraction site is bleeding?',
-        ],
-        suggestedAnswers: 'Avoid drinking through a straw or smoking for 48 hours to prevent dry socket. Eat soft foods like yogurt and lukewarm soup. Mild sensitivity after fillings is normal for 3-5 days.',
-        escalationRules: 'If patient reports uncontrolled bleeding after biting on gauze for 45 mins, notify on-call oral surgeon.',
-        markdownContent: `### Post-Operative Aftercare Guide
-
-#### Tooth Extraction & Oral Surgery Recovery
-1. **Bleeding Control**: Keep firm biting pressure on the gauze pad for 30–45 minutes. If slight oozing persists, bite gently on a damp black tea bag.
-2. **Protect the Blood Clot**:
-   - **DO NOT** drink through a straw for 72 hours.
-   - **DO NOT** smoke, vape, or spit forcefully.
-   - Avoid vigorous rinsing on day 1.
-3. **Diet**: Soft, cool foods (yogurt, applesauce, smoothies with a spoon, lukewarm broth). Avoid hot, spicy, or crunchy foods.
-
-#### Composite Fillings & Crown Placement
-- Numbness typically wears off in 2–4 hours. Avoid chewing until sensation returns.
-- Temperature sensitivity to cold is common for 3–7 days. If pain increases or bite feels high, call for a quick 5-minute adjustment.`,
       },
     ],
     defaultServices: [
@@ -732,18 +767,43 @@ For patients without dental insurance, we offer transparent bundled rates:
       {
         id: 'doc-card-01',
         industryId: 'ind-cardio',
-        title: 'Cardiac Stress Test & Holter Monitor Prep Guidelines',
-        docType: 'guidelines',
-        tags: ['Cardiology', 'Stress Test', 'Holter', 'Preparation'],
+        industryName: 'Cardiology Clinic',
+        serviceId: 'srv-card-1',
+        serviceName: 'Comprehensive Cardiology Initial Consult',
+        name: 'Cardiac Stress Test & Holter Monitor Prep Consent Agreement',
+        title: 'Cardiac Stress Test & Holter Monitor Prep Consent Agreement',
+        description: 'Pre-procedure informed consent, telemetry protocol acknowledgment, and equipment return authorization.',
+        creationMethod: 'custom',
+        sourceFileName: 'Cardio_Stress_Holter_Consent.docx',
+        autoNumbering: {
+          enabled: true,
+          prefix: 'CARD-CON-',
+          sequenceDigits: 4,
+          currentNumber: 1018,
+          suffix: '-2026',
+        },
+        extractedFields: [
+          { placeholder: '{{patient_name}}', mappedVariable: 'client_name', label: 'Patient Name', fieldSource: 'system' },
+          { placeholder: '{{doctor_name}}', mappedVariable: 'assigned_provider', label: 'Cardiologist', fieldSource: 'system' },
+          { placeholder: '{{treatment_date}}', mappedVariable: 'appointment_date', label: 'Procedure Date', fieldSource: 'system' },
+          { placeholder: '{{doc_number}}', mappedVariable: 'document_number', label: 'Document Number', fieldSource: 'system' },
+        ],
+        contentHtml: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1e293b; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+  <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #dc2626; padding-bottom: 12px; margin-bottom: 16px;">
+    <div>
+      <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 800;">CARDIAC DIAGNOSTIC & STRESS TEST CONSENT</h2>
+      <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Clinical Cardiology Protocol & Telemetry Agreement</p>
+    </div>
+    <div style="text-align: right;">
+      <span style="display: inline-block; background: #fef2f2; color: #dc2626; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid #fecaca;">
+        Ref: {{doc_number}}
+      </span>
+    </div>
+  </div>
+  <p style="font-size: 13px; color: #334155;">I authorize Dr. <strong>{{doctor_name}}</strong> to perform diagnostic cardiac stress evaluation, telemetry analysis, and Holter monitoring for <strong>{{patient_name}}</strong> on <strong>{{treatment_date}}</strong>.</p>
+</div>`,
         createdAt: '2026-01-10T09:00:00Z',
         updatedAt: '2026-02-05T10:00:00Z',
-        keyQueryTriggers: [
-          'Can I drink coffee before a stress test?',
-          'What should I wear to my echocardiogram?',
-          'Can I shower while wearing a 24-hour Holter monitor?',
-        ],
-        suggestedAnswers: 'Avoid all caffeine for 24 hours prior to stress testing. Wear running shoes. Holter monitors cannot get wet, so shower beforehand.',
-        markdownContent: `### Cardiology Testing Preparation Protocols\n\n- **Stress Echo**: Fast 3 hours prior. Strictly no coffee, tea, chocolate, or soda for 24 hours.\n- **Holter Monitoring**: Sponge bath only while wearing device. Keep a symptom activity log.`,
       },
     ],
     defaultServices: [
@@ -933,19 +993,35 @@ For patients without dental insurance, we offer transparent bundled rates:
       {
         id: 'doc-leg-01',
         industryId: 'ind-legal-injury',
-        title: 'Contingency Fee Structure & Client FAQ (No Fee Guarantee)',
-        docType: 'faq',
-        tags: ['Legal', 'Personal Injury', 'Contingency', 'Retainer', 'FAQ'],
+        industryName: 'Personal Injury Law',
+        serviceId: 'srv-leg-1',
+        serviceName: 'Free Case Evaluation (30m)',
+        name: 'Contingency Fee Representation Agreement & Power of Attorney',
+        title: 'Contingency Fee Representation Agreement & Power of Attorney',
+        description: 'Standard attorney representation retainer, litigation expense advance agreement, and client power of attorney.',
+        creationMethod: 'import_doc',
+        sourceFileName: 'PI_Contingency_Retainer_Agreement.docx',
+        autoNumbering: {
+          enabled: true,
+          prefix: 'LEG-RET-',
+          sequenceDigits: 4,
+          currentNumber: 5082,
+          suffix: '-2026',
+        },
+        extractedFields: [
+          { placeholder: '{{client_name}}', mappedVariable: 'client_name', label: 'Client Full Name', fieldSource: 'system' },
+          { placeholder: '{{incident_date}}', mappedVariable: 'appointment_date', label: 'Incident Date', fieldSource: 'system' },
+          { placeholder: '{{doc_number}}', mappedVariable: 'document_number', label: 'Document Number', fieldSource: 'system' },
+        ],
+        contentHtml: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1e293b; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+  <div style="border-bottom: 2px solid #181e25; padding-bottom: 12px; margin-bottom: 16px;">
+    <h2 style="margin: 0; color: #181e25; font-size: 18px; font-weight: 800;">LEGAL RETAINER & CONTINGENCY FEE AGREEMENT</h2>
+    <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Matter Ref: {{doc_number}} | Client: {{client_name}}</p>
+  </div>
+  <p style="font-size: 13px; color: #334155;">Client agrees to retain counsel for personal injury representation regarding claims arising on {{incident_date}}. Legal fees are 100% contingent on monetary recovery.</p>
+</div>`,
         createdAt: '2026-01-08T09:00:00Z',
         updatedAt: '2026-02-05T10:00:00Z',
-        keyQueryTriggers: [
-          'How much do you charge upfront?',
-          'What percentage does the lawyer take?',
-          'What happens if we lose the case?',
-          'How long do I have to file a claim in my state?',
-        ],
-        suggestedAnswers: 'We work on a 100% contingency fee basis. You pay $0 upfront and $0 out of pocket. We only collect a fee if we successfully win a settlement or jury verdict for you.',
-        markdownContent: `### Contingency Legal Fees & Policies\n\n1. **Zero Upfront Cost**: We front all investigation, deposition, and expert witness expenses.\n2. **Standard Fee**: 33.3% of pre-trial settlement, or 40% if case goes to active court trial.\n3. **No Win No Fee**: If no recovery is achieved, you owe zero legal fees.`,
       },
     ],
     defaultServices: [
@@ -1076,14 +1152,34 @@ For patients without dental insurance, we offer transparent bundled rates:
       {
         id: 'doc-re-01',
         industryId: 'ind-realestate',
-        title: 'Home Buying Process & Escrow Timeline Guide',
-        docType: 'guidelines',
-        tags: ['Real Estate', 'Escrow', 'Buying Guide'],
+        industryName: 'Residential Real Estate',
+        serviceId: 'srv-re-1',
+        serviceName: 'Private Home Showing Tour',
+        name: 'Exclusive Buyer Brokerage Agreement & Agency Disclosure',
+        title: 'Exclusive Buyer Brokerage Agreement & Agency Disclosure',
+        description: 'State real estate association buyer representation agreement, fiduciary duties, and commission terms.',
+        creationMethod: 'custom',
+        sourceFileName: 'Buyer_Brokerage_Agreement.docx',
+        autoNumbering: {
+          enabled: true,
+          prefix: 'RE-AGR-',
+          sequenceDigits: 4,
+          currentNumber: 4015,
+          suffix: '-2026',
+        },
+        extractedFields: [
+          { placeholder: '{{client_name}}', mappedVariable: 'client_name', label: 'Buyer Name', fieldSource: 'system' },
+          { placeholder: '{{doc_number}}', mappedVariable: 'document_number', label: 'Document Number', fieldSource: 'system' },
+        ],
+        contentHtml: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1e293b; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+  <div style="border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 16px;">
+    <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 800;">EXCLUSIVE BUYER BROKERAGE AGREEMENT</h2>
+    <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Agency Disclosure & Agreement # {{doc_number}}</p>
+  </div>
+  <p style="font-size: 13px; color: #334155;">Buyer <strong>{{client_name}}</strong> hereby appoints Broker as exclusive agent for property search and escrow representation.</p>
+</div>`,
         createdAt: '2026-01-08T09:00:00Z',
         updatedAt: '2026-02-05T10:00:00Z',
-        keyQueryTriggers: ['What are typical closing costs in this area?', 'How long does escrow take from offer acceptance?'],
-        suggestedAnswers: 'Escrow typically spans 30 days for conventional financing. Buyer closing costs range from 2% to 4% of purchase price.',
-        markdownContent: `### Home Buyer Journey & Escrow Milestones\n\n1. **Pre-Approval**: Secure loan commitment.\n2. **Offer Acceptance & Earnest Money**: Deposit within 3 business days.\n3. **Inspection & Appraisal Contingencies**: 10-17 days.\n4. **Final Walkthrough & Closing**: Key handover!`,
       },
     ],
     defaultServices: [
@@ -1184,14 +1280,35 @@ For patients without dental insurance, we offer transparent bundled rates:
       {
         id: 'doc-hvac-01',
         industryId: 'ind-hvac',
-        title: 'HVAC Diagnostic Fees, Warranty & Maintenance Agreement FAQ',
-        docType: 'pricing',
-        tags: ['HVAC', 'Pricing', 'Warranty'],
+        industryName: 'HVAC & Air Conditioning Repair',
+        serviceId: 'srv-hvac-1',
+        serviceName: 'Comprehensive AC System Diagnostic',
+        name: 'HVAC Diagnostic Authorization & Maintenance Agreement',
+        title: 'HVAC Diagnostic Authorization & Maintenance Agreement',
+        description: 'Customer authorization for technician diagnostic inspection, parts warranty, and service fees.',
+        creationMethod: 'import_doc',
+        sourceFileName: 'HVAC_Diagnostic_Authorization.docx',
+        autoNumbering: {
+          enabled: true,
+          prefix: 'HVAC-AUTH-',
+          sequenceDigits: 4,
+          currentNumber: 6023,
+          suffix: '-2026',
+        },
+        extractedFields: [
+          { placeholder: '{{client_name}}', mappedVariable: 'client_name', label: 'Homeowner Name', fieldSource: 'system' },
+          { placeholder: '{{service_address}}', mappedVariable: 'hospital_location', label: 'Service Address', fieldSource: 'system' },
+          { placeholder: '{{doc_number}}', mappedVariable: 'document_number', label: 'Document Number', fieldSource: 'system' },
+        ],
+        contentHtml: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1e293b; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+  <div style="border-bottom: 2px solid #ea580c; padding-bottom: 12px; margin-bottom: 16px;">
+    <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 800;">HVAC DIAGNOSTIC AUTHORIZATION</h2>
+    <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Dispatch Work Order Ref: {{doc_number}}</p>
+  </div>
+  <p style="font-size: 13px; color: #334155;">Customer <strong>{{client_name}}</strong> authorizes technician on-site diagnostic at <strong>{{service_address}}</strong>.</p>
+</div>`,
         createdAt: '2026-01-08T09:00:00Z',
         updatedAt: '2026-02-05T10:00:00Z',
-        keyQueryTriggers: ['How much is the diagnostic service call fee?', 'Do you provide warranties on replacement parts?'],
-        suggestedAnswers: 'Our diagnostic inspection fee is $89, which is 100% credited toward your repair if you proceed. All parts carry a 1-year warranty.',
-        markdownContent: `### HVAC Service Rates & Warranty Policy\n\n- **Diagnostic Fee**: $89 (Waived with repair approval).\n- **Freon / Refrigerant Recharge**: Starting at $180.\n- **Parts Warranty**: 12 months on all OEM compressors and fan motors.`,
       },
     ],
     defaultServices: [
@@ -1290,14 +1407,35 @@ For patients without dental insurance, we offer transparent bundled rates:
       {
         id: 'doc-auto-01',
         industryId: 'ind-auto',
-        title: 'Service Maintenance Schedules, Loaner Vehicle & Warranty Policy',
-        docType: 'policy',
-        tags: ['Automotive', 'Warranty', 'Loaner'],
+        industryName: 'Automobile Dealership & Service',
+        serviceId: 'srv-auto-1',
+        serviceName: 'Comprehensive Synthetic Oil Change & Multi-Point Inspection',
+        name: 'Vehicle Repair Authorization & Insurance Billing Agreement',
+        title: 'Vehicle Repair Authorization & Insurance Billing Agreement',
+        description: 'Customer authorization for vehicle teardown, OEM parts ordering, and direct insurer billing.',
+        creationMethod: 'custom',
+        sourceFileName: 'Auto_Repair_Authorization.docx',
+        autoNumbering: {
+          enabled: true,
+          prefix: 'AUTO-REP-',
+          sequenceDigits: 4,
+          currentNumber: 7089,
+          suffix: '-2026',
+        },
+        extractedFields: [
+          { placeholder: '{{client_name}}', mappedVariable: 'client_name', label: 'Vehicle Owner', fieldSource: 'system' },
+          { placeholder: '{{vehicle_vin}}', mappedVariable: 'policy_number', label: 'Vehicle VIN', fieldSource: 'system' },
+          { placeholder: '{{doc_number}}', mappedVariable: 'document_number', label: 'Document Number', fieldSource: 'system' },
+        ],
+        contentHtml: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1e293b; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+  <div style="border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 16px;">
+    <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 800;">VEHICLE REPAIR & SERVICE AUTHORIZATION</h2>
+    <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Repair Order #: {{doc_number}}</p>
+  </div>
+  <p style="font-size: 13px; color: #334155;">Customer <strong>{{client_name}}</strong> authorizes dealership service center to perform inspections on vehicle VIN <strong>{{vehicle_vin}}</strong>.</p>
+</div>`,
         createdAt: '2026-01-08T09:00:00Z',
         updatedAt: '2026-02-05T10:00:00Z',
-        keyQueryTriggers: ['Do you provide complimentary loaner cars during service?', 'What is included in the 30k mile factory maintenance?'],
-        suggestedAnswers: 'Complimentary loaner cars are provided for all services exceeding 2 hours. Factory 30k mile service includes synthetic oil change, tire rotation, cabin filter replacement, and multipoint inspection.',
-        markdownContent: `### Dealership Service Department Policies\n\n- **Loaner Cars**: Available with valid driver license and insurance for jobs > 2 hrs.\n- **Oil Change Express Lane**: No appointment needed; typical turnaround 35 minutes.`,
       },
     ],
     defaultServices: [
@@ -1397,14 +1535,34 @@ For patients without dental insurance, we offer transparent bundled rates:
       {
         id: 'doc-tech-01',
         industryId: 'ind-tech',
-        title: 'Engagement Models, Security Compliance (SOC2) & SOW Guidelines',
-        docType: 'guidelines',
-        tags: ['IT', 'SOC2', 'SOW', 'Cloud'],
+        industryName: 'IT & Cloud / AI Consulting',
+        serviceId: 'srv-tech-1',
+        serviceName: 'Cloud & AI Architecture Scoping Session (60m)',
+        name: 'Master Services Agreement (MSA) & Cloud SLA Agreement',
+        title: 'Master Services Agreement (MSA) & Cloud SLA Agreement',
+        description: 'B2B enterprise terms of service, IP assignment, SOC2 confidentiality, and SLA guarantees.',
+        creationMethod: 'custom',
+        sourceFileName: 'Enterprise_MSA_Template.docx',
+        autoNumbering: {
+          enabled: true,
+          prefix: 'MSA-IT-',
+          sequenceDigits: 4,
+          currentNumber: 8012,
+          suffix: '-2026',
+        },
+        extractedFields: [
+          { placeholder: '{{client_name}}', mappedVariable: 'client_name', label: 'Client Organization', fieldSource: 'system' },
+          { placeholder: '{{doc_number}}', mappedVariable: 'document_number', label: 'Document Number', fieldSource: 'system' },
+        ],
+        contentHtml: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1e293b; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+  <div style="border-bottom: 2px solid #6366f1; padding-bottom: 12px; margin-bottom: 16px;">
+    <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 800;">MASTER SERVICES AGREEMENT (MSA)</h2>
+    <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Enterprise IT SOW & SLA Schedule # {{doc_number}}</p>
+  </div>
+  <p style="font-size: 13px; color: #334155;">Client <strong>{{client_name}}</strong> agrees to scope and engineering terms outlined in Master Services Schedule.</p>
+</div>`,
         createdAt: '2026-01-08T09:00:00Z',
         updatedAt: '2026-02-05T10:00:00Z',
-        keyQueryTriggers: ['What engagement models do you offer?', 'Is your development process SOC2 Type II compliant?'],
-        suggestedAnswers: 'We offer fixed-scope milestone sprints and dedicated squad retainers. All developers work within SOC2 compliant zero-trust environments.',
-        markdownContent: `### B2B Consulting Frameworks\n\n1. **Fixed-Price Milestone Sprints**: Ideal for well-defined MVPs.\n2. **Dedicated Cloud Squads**: Flexible weekly retainer with senior engineers.\n3. **Security**: SOC2 Type II certified, HIPAA BAA ready, all IP assigned to client.`,
       },
     ],
     defaultServices: [
@@ -1504,14 +1662,34 @@ For patients without dental insurance, we offer transparent bundled rates:
       {
         id: 'doc-coach-01',
         industryId: 'ind-coaching',
-        title: 'Executive Coaching Packages, Retainer Terms & Confidentiality NDA',
-        docType: 'policy',
-        tags: ['Coaching', 'Executive', 'NDA', 'Retainer'],
+        industryName: 'Executive Coaching & Leadership Advisory',
+        serviceId: 'srv-coach-1',
+        serviceName: 'Executive Strategy Chemistry Call (30m)',
+        name: 'Executive Coaching Retainer Agreement & Bilateral NDA',
+        title: 'Executive Coaching Retainer Agreement & Bilateral NDA',
+        description: 'C-Suite 6-month leadership advisory terms, confidential board communications, and retainer schedule.',
+        creationMethod: 'custom',
+        sourceFileName: 'Executive_Coaching_Retainer_NDA.docx',
+        autoNumbering: {
+          enabled: true,
+          prefix: 'RIA-AGR-',
+          sequenceDigits: 4,
+          currentNumber: 9005,
+          suffix: '-2026',
+        },
+        extractedFields: [
+          { placeholder: '{{client_name}}', mappedVariable: 'client_name', label: 'Executive Full Name', fieldSource: 'system' },
+          { placeholder: '{{doc_number}}', mappedVariable: 'document_number', label: 'Document Number', fieldSource: 'system' },
+        ],
+        contentHtml: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1e293b; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+  <div style="border-bottom: 2px solid #8b5cf6; padding-bottom: 12px; margin-bottom: 16px;">
+    <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 800;">EXECUTIVE LEADERSHIP ADVISORY AGREEMENT</h2>
+    <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Confidential Engagement Ref: {{doc_number}}</p>
+  </div>
+  <p style="font-size: 13px; color: #334155;">Engagement confirmation for executive mentorship and bilateral non-disclosure agreement with <strong>{{client_name}}</strong>.</p>
+</div>`,
         createdAt: '2026-01-08T09:00:00Z',
         updatedAt: '2026-02-05T10:00:00Z',
-        keyQueryTriggers: ['What is the coaching commitment length?', 'Is coaching completely confidential from my board/investors?'],
-        suggestedAnswers: 'All executive engagements are bound by strict bilateral NDAs and run in 6-month cohorts with bi-weekly 60-minute strategy sessions.',
-        markdownContent: `### Executive Advisory Engagement Standards\n\n- **Confidentiality**: 100% privileged and protected under strict NDA.\n- **Cadence**: 2x monthly 60-min sessions + unlimited async WhatsApp/Slack access.\n- **Term**: 6-month minimum cohort commitment.`,
       },
     ],
     defaultServices: [
@@ -1583,10 +1761,37 @@ export const SEED_WORKSPACES: ProvisionedWorkspace[] = [
 // ==========================================
 // STORE STATE & LOCAL STORAGE HELPER
 // ==========================================
+export const HEALTHCARE_SPECIALTIES = [
+  "Cardiologist",
+  "Dentist",
+  "Dermatologist",
+  "Diagnostics",
+  "Endocrinologist",
+  "ENT Specialist",
+  "Fertility/IVF Specialist",
+  "Gastroenterologist",
+  "General Physician",
+  "General Surgery",
+  "Gynecologist",
+  "Nephrologist",
+  "Neurosurgeon",
+  "Nutrition",
+  "Oncologist",
+  "Ophthalmologist",
+  "Orthopedic",
+  "Pediatrician",
+  "Pulmonologist (Lung)",
+  "Rheumatologist",
+  "Sexologist",
+  "Therapist",
+  "Psychiatrist",
+  "Urologist",
+];
+
 const STORAGE_KEYS = {
-  CATEGORIES: 'mantra_industry_categories_v1',
-  BUNDLES: 'mantra_industry_bundles_v1',
-  WORKSPACES: 'mantra_provisioned_workspaces_v1',
+  CATEGORIES: 'mantra_industry_categories_v2',
+  BUNDLES: 'mantra_industry_bundles_v2',
+  WORKSPACES: 'mantra_provisioned_workspaces_v2',
 };
 
 export class IndustryTemplateStore {
@@ -1597,6 +1802,132 @@ export class IndustryTemplateStore {
   private listeners: Set<() => void> = new Set();
 
   private constructor() {
+    // Ensure all 24 healthcare specialties exist as bundles
+    HEALTHCARE_SPECIALTIES.forEach((specName) => {
+      const specId = `ind-${specName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+      const exists = this.bundles.some((b) => b.industryName === specName || b.industryId === specId);
+      if (!exists) {
+        this.bundles.push({
+          id: `bundle-${specId}`,
+          industryId: specId,
+          industryName: specName,
+          categoryName: 'Healthcare',
+          slug: specId,
+          version: '1.0.0',
+          status: 'published',
+          recommendedTone: 'Clinical, Reassuring, Professional',
+          badges: ['HIPAA Ready', 'Turnkey Starter'],
+          processTemplate: {
+            id: `proc-${specId}-01`,
+            industryId: specId,
+            industryName: specName,
+            name: `${specName} Patient Consultation & Intake Journey`,
+            description: `Complete patient scheduling, clinical intake questionnaires, and appointment confirmation workflow for ${specName}.`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            globalSettings: {
+              aiModel: 'gemini-2.5-flash',
+              voiceSpeed: 1.0,
+              voiceGender: 'female',
+              voiceTone: 'Warm & Empathetic',
+              recordCalls: true,
+              maxDurationMinutes: 6,
+              wrapUpWindowSeconds: 45,
+              retryRules: { enabled: true, maxAttempts: 3, delayMinutes: 45 },
+              skipDayRules: { enabled: true, skipDaysOfWeek: [0, 6], skipHolidays: true },
+              voicemailDetection: { enabled: true, action: 'leave_message' },
+            },
+            stages: [
+              {
+                id: `stg-${specId}-1`,
+                stageOrder: 1,
+                name: 'New Patient Intake & Triage',
+                stageCode: 'STG_INTAKE',
+                goal: `Identify primary symptoms, triage urgency, and schedule ${specName} consultation.`,
+                basic: {
+                  callAction: 'ai_receives_calls',
+                  greetingPhrase: `Thank you for calling {{business_name}}. My name is Sarah, your AI care coordinator for ${specName}. How may I help you today?`,
+                  callerPitch: `Speak warmly and collect: Full Name, Phone, Primary Concern, Preferred Appointment Time.`,
+                  targetObjective: 'Schedule consultation',
+                },
+                advanced: { recordCall: true },
+              },
+            ],
+          },
+          formTemplates: [
+            {
+              id: `form-${specId}-01`,
+              categoryId: 'cat-healthcare',
+              categoryName: 'Healthcare',
+              industryId: specId,
+              industryName: specName,
+              title: `${specName} Patient Intake & Medical History Form`,
+              category: 'intake',
+              description: `Collect patient background, symptoms, and insurance details prior to ${specName} consultation.`,
+              estimatedMinutes: 3,
+              submitButtonText: 'Submit Registration',
+              successMessage: 'Thank you for submitting your intake form!',
+              autoCreateClient: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              sections: [
+                {
+                  id: 'sec-1',
+                  title: 'Patient Information',
+                  fields: [
+                    { id: 'f-1', label: 'Full Name', name: 'full_name', type: 'text', isRequired: true, fieldSource: 'standard' },
+                    { id: 'f-2', label: 'Phone Number', name: 'phone', type: 'phone', isRequired: true, fieldSource: 'standard' },
+                    { id: 'f-3', label: 'Email Address', name: 'email', type: 'email', isRequired: true, fieldSource: 'standard' },
+                  ],
+                },
+              ],
+            },
+          ],
+          documentTemplates: [
+            {
+              id: `doc-${specId}-01`,
+              categoryId: 'cat-healthcare',
+              categoryName: 'Healthcare',
+              industryId: specId,
+              industryName: specName,
+              name: `${specName} Informed Consent & Clinical Authorization`,
+              title: `${specName} Informed Consent & Clinical Authorization`,
+              description: `Patient informed consent, clinical liability release, and treatment agreement for ${specName}.`,
+              creationMethod: 'custom',
+              autoNumbering: { enabled: true, prefix: 'MED-', sequenceDigits: 4, currentNumber: 1001, suffix: `-${new Date().getFullYear()}` },
+              extractedFields: [
+                { placeholder: '{{patient_name}}', mappedVariable: 'client_name', label: 'Patient Name' },
+                { placeholder: '{{doctor_name}}', mappedVariable: 'primary_doctor', label: 'Clinician' },
+              ],
+              contentHtml: `<div style="font-family: Arial, sans-serif; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff;">
+                <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px;">${specName.toUpperCase()} INFORMED CONSENT</h2>
+                <p style="font-size: 13px; color: #334155; line-height: 1.6;">I consent to diagnostic evaluation and treatment procedures conducted by {{doctor_name}}.</p>
+                <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">Patient Signature: {{patient_name}}</div>
+              </div>`,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ],
+          defaultServices: [
+            {
+              id: `srv-${specId}-1`,
+              name: `Comprehensive ${specName} Consultation`,
+              durationMinutes: 45,
+              priceEstimate: 175,
+              description: `Comprehensive consultation and diagnostic exam with ${specName}.`,
+              category: 'Consultation',
+              isPopular: true,
+            },
+          ],
+          customFields: [
+            { id: `cf-${specId}-1`, name: 'Referring Physician', key: 'referring_physician', type: 'Text', entity: 'Client', isRequired: false },
+          ],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+    });
+
     if (typeof window !== 'undefined') {
       try {
         const storedCats = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
@@ -1665,20 +1996,73 @@ export class IndustryTemplateStore {
   }
 
   public getAllFormTemplates(): FormTemplate[] {
-    return this.bundles.flatMap((b) => b.formTemplates);
+    return this.bundles.flatMap((b) =>
+      b.formTemplates.map((f) => ({
+        ...f,
+        categoryId: f.categoryId || b.id || 'cat-general',
+        categoryName: f.categoryName || b.categoryName || 'General',
+        industryName: f.industryName || b.industryName,
+      }))
+    );
   }
 
   public getAllDocumentTemplates(): DocumentTemplate[] {
-    return this.bundles.flatMap((b) => b.documentTemplates);
+    return this.bundles.flatMap((b) =>
+      b.documentTemplates.map((d) => ({
+        ...d,
+        categoryId: d.categoryId || b.id || 'cat-general',
+        categoryName: d.categoryName || b.categoryName || 'General',
+        industryName: d.industryName || b.industryName,
+      }))
+    );
+  }
+
+  public getIndustriesByCategory(categoryIdOrName: string): { id: string; name: string }[] {
+    if (!categoryIdOrName || categoryIdOrName === 'All') {
+      return this.bundles.map((b) => ({ id: b.industryId, name: b.industryName }));
+    }
+    const cat = this.categories.find(
+      (c) => c.id === categoryIdOrName || c.name === categoryIdOrName || c.slug === categoryIdOrName
+    );
+    const targetCatName = cat ? cat.name : categoryIdOrName;
+
+    // Direct match for Healthcare
+    if (
+      targetCatName === 'Healthcare' ||
+      targetCatName === 'Healthcare & Medical' ||
+      categoryIdOrName === 'cat-healthcare'
+    ) {
+      return this.bundles
+        .filter((b) => b.categoryName === 'Healthcare' || b.categoryName === 'Healthcare & Medical')
+        .map((b) => ({ id: b.industryId, name: b.industryName }));
+    }
+
+    return this.bundles
+      .filter((b) => b.categoryName === targetCatName || b.id === categoryIdOrName)
+      .map((b) => ({ id: b.industryId, name: b.industryName }));
+  }
+
+  public getAllServices(): DefaultServiceTemplate[] {
+    return this.bundles.flatMap((b) => b.defaultServices);
+  }
+
+  public getServicesByIndustry(industryId: string): DefaultServiceTemplate[] {
+    const bundle = this.bundles.find((b) => b.industryId === industryId || b.id === industryId);
+    return bundle ? bundle.defaultServices : [];
   }
 
   // Bundle Actions
   public saveBundle(bundle: IndustryStarterBundle) {
     const existingIndex = this.bundles.findIndex((b) => b.id === bundle.id);
     if (existingIndex >= 0) {
-      this.bundles[existingIndex] = { ...bundle, updatedAt: new Date().toISOString() };
+      const updated = [...this.bundles];
+      updated[existingIndex] = { ...bundle, updatedAt: new Date().toISOString() };
+      this.bundles = updated;
     } else {
-      this.bundles.unshift({ ...bundle, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+      this.bundles = [
+        { ...bundle, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        ...this.bundles,
+      ];
     }
     this.persist();
   }
@@ -1700,24 +2084,24 @@ export class IndustryTemplateStore {
 
   // Form Template Actions
   public saveFormTemplate(form: FormTemplate) {
-    let handled = false;
-    this.bundles = this.bundles.map((b) => {
-      if (b.industryId === form.industryId || b.id === form.industryId) {
-        const formIndex = b.formTemplates.findIndex((f) => f.id === form.id);
-        if (formIndex >= 0) {
-          b.formTemplates[formIndex] = { ...form, updatedAt: new Date().toISOString() };
-        } else {
-          b.formTemplates.push({ ...form, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-        }
-        handled = true;
-      }
-      return b;
+    // Remove from existing location if it was moved
+    this.bundles.forEach((b) => {
+      b.formTemplates = b.formTemplates.filter((f) => f.id !== form.id);
     });
 
-    if (!handled && this.bundles.length > 0) {
-      // Add to first bundle as fallback
-      this.bundles[0].formTemplates.push(form);
+    const targetBundle = this.bundles.find(
+      (b) => b.industryId === form.industryId || b.id === form.industryId
+    ) || this.bundles[0];
+
+    if (targetBundle) {
+      targetBundle.formTemplates.unshift({
+        ...form,
+        industryId: targetBundle.industryId,
+        industryName: targetBundle.industryName,
+        updatedAt: new Date().toISOString(),
+      });
     }
+
     this.persist();
   }
 
@@ -1730,23 +2114,26 @@ export class IndustryTemplateStore {
 
   // Document Template Actions
   public saveDocumentTemplate(doc: DocumentTemplate) {
-    let handled = false;
-    this.bundles = this.bundles.map((b) => {
-      if (b.industryId === doc.industryId || b.id === doc.industryId) {
-        const docIndex = b.documentTemplates.findIndex((d) => d.id === doc.id);
-        if (docIndex >= 0) {
-          b.documentTemplates[docIndex] = { ...doc, updatedAt: new Date().toISOString() };
-        } else {
-          b.documentTemplates.push({ ...doc, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-        }
-        handled = true;
-      }
-      return b;
+    // Remove from existing location if it was moved
+    this.bundles.forEach((b) => {
+      b.documentTemplates = b.documentTemplates.filter((d) => d.id !== doc.id);
     });
 
-    if (!handled && this.bundles.length > 0) {
-      this.bundles[0].documentTemplates.push(doc);
+    const targetBundle = this.bundles.find(
+      (b) => b.industryId === doc.industryId || b.id === doc.industryId
+    ) || this.bundles[0];
+
+    if (targetBundle) {
+      targetBundle.documentTemplates.unshift({
+        ...doc,
+        categoryId: doc.categoryId || targetBundle.id || 'cat-healthcare',
+        categoryName: doc.categoryName || targetBundle.categoryName || 'Healthcare & Medical',
+        industryId: targetBundle.industryId,
+        industryName: targetBundle.industryName,
+        updatedAt: new Date().toISOString(),
+      });
     }
+
     this.persist();
   }
 
@@ -1851,6 +2238,9 @@ export function useIndustryTemplateStore() {
     allProcesses: store.getAllProcessTemplates(),
     allForms: store.getAllFormTemplates(),
     allDocs: store.getAllDocumentTemplates(),
+    allServices: store.getAllServices(),
+    getServicesByIndustry: (id: string) => store.getServicesByIndustry(id),
+    getIndustriesByCategory: (catId: string) => store.getIndustriesByCategory(catId),
     getBundleById: (id: string) => store.getBundleById(id),
     saveBundle: (b: IndustryStarterBundle) => store.saveBundle(b),
     deleteBundle: (id: string) => store.deleteBundle(id),

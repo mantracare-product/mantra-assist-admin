@@ -186,6 +186,8 @@ export interface FormSectionTemplate {
 
 export interface FormTemplate {
   id: string;
+  categoryId?: string;
+  categoryName?: string;
   industryId: string;
   industryName?: string;
   title: string;
@@ -205,23 +207,51 @@ export interface FormTemplate {
 }
 
 // ==========================================
-// 4. DOCUMENT & KNOWLEDGE BASE TEMPLATES
+// 4. DOCUMENT TEMPLATES (CLINICAL, LEGAL & OPERATIONAL)
 // ==========================================
-export type DocumentType = 'faq' | 'policy' | 'guidelines' | 'aftercare' | 'pricing';
+export type DocumentCreationMethod = 'import_doc' | 'import_webform' | 'custom';
+
+export interface DocumentFieldMapping {
+  placeholder: string;       // e.g. "patient_name" or "{{patient_name}}"
+  mappedVariable: string;    // e.g. "client_name" or "appointment_date"
+  label?: string;
+  fieldSource?: 'system' | 'custom' | 'webform';
+}
+
+export interface DocumentAutoNumbering {
+  enabled: boolean;
+  prefix: string;            // e.g. "DOC-", "MED-", "REF-"
+  sequenceDigits: number;    // e.g. 4 -> 0001
+  currentNumber: number;     // e.g. 1001
+  suffix?: string;           // e.g. "-2026", "-MED"
+}
 
 export interface DocumentTemplate {
   id: string;
+  categoryId?: string;
+  categoryName?: string;
   industryId: string;
-  industryName?: string;
-  title: string;
-  docType: DocumentType;
-  tags: string[];
-  markdownContent: string;
-  keyQueryTriggers: string[];
-  suggestedAnswers?: string;
-  escalationRules?: string;
+  industryName: string;
+  serviceId?: string;
+  serviceName?: string;
+  name: string;              // Document Name e.g. "Patient Informed Consent & Treatment Authorization"
+  title?: string;            // Fallback alias for name
+  description: string;       // Purpose & description of document
+  creationMethod: DocumentCreationMethod;
+  sourceFileName?: string;
+  sourceWebFormId?: string;
+  contentHtml: string;
+  extractedFields: DocumentFieldMapping[];
+  autoNumbering: DocumentAutoNumbering;
   createdAt: string;
   updatedAt: string;
+  // Backward compatibility fields
+  tags?: string[];
+  docType?: string;
+  markdownContent?: string;
+  keyQueryTriggers?: string[];
+  suggestedAnswers?: string;
+  escalationRules?: string;
 }
 
 // ==========================================

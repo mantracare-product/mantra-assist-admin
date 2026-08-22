@@ -1,21 +1,21 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   FormTemplate,
+  FormSectionTemplate,
   FormFieldTemplate,
   FormFieldType,
 } from "@/lib/types/industry-templates";
+import { useIndustryTemplateStore } from "@/lib/industry-template-store";
 import {
   ALL_PREDEFINED_FIELDS,
-  AVAILABLE_INDUSTRIES_LIST,
   PredefinedFieldItem,
   getPredefinedFieldsForIndustry,
   createFormFieldFromPredefined,
 } from "@/lib/system-and-custom-fields";
+import { Pill } from "@/components/ui/Pill";
 import {
-  ArrowLeft,
-  Save,
   Plus,
   Trash2,
   Copy,
@@ -42,21 +42,6 @@ import {
   Layers,
   ChevronDown,
   ChevronRight,
-  Folder,
-  Users,
-  CalendarDays,
-  PhoneCall,
-  Activity,
-  Building2,
-  Package,
-  Briefcase,
-  Sparkles,
-  Stethoscope,
-  Cpu,
-  Car,
-  Home,
-  Scale,
-  Wrench,
 } from "lucide-react";
 
 interface WebFormBuilderModalProps {
@@ -96,8 +81,39 @@ export const WebFormBuilderModal: React.FC<WebFormBuilderModalProps> = ({
   form: initialForm,
   onSave,
 }) => {
-  const [form, setForm] = useState<FormTemplate>(initialForm);
+  const { categories, bundles, getIndustriesByCategory } = useIndustryTemplateStore();
+
+  const [form, setForm] = useState<FormTemplate>(() => {
+    return {
+      ...initialForm,
+      title: initialForm?.title || "",
+      description: initialForm?.description || "",
+      categoryId: initialForm?.categoryId || "",
+      categoryName: initialForm?.categoryName || "",
+      industryId: initialForm?.industryId || "",
+      industryName: initialForm?.industryName || "",
+      sections: initialForm?.sections || [],
+    };
+  });
+
+  useEffect(() => {
+    setForm({
+      ...initialForm,
+      title: initialForm?.title || "",
+      description: initialForm?.description || "",
+      categoryId: initialForm?.categoryId || "",
+      categoryName: initialForm?.categoryName || "",
+      industryId: initialForm?.industryId || "",
+      industryName: initialForm?.industryName || "",
+      sections: initialForm?.sections || [],
+    });
+  }, [initialForm]);
+
   const [activeSidebarTab, setActiveSidebarTab] = useState<"add_fields" | "field_settings">("add_fields");
+
+  // Custom Dropdown States
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [isIndustryDropdownOpen, setIsIndustryDropdownOpen] = useState(false);
 
   // Select Field Dropdown State (Closed by default)
   const [isSelectFieldDropdownOpen, setIsSelectFieldDropdownOpen] = useState(false);
@@ -105,20 +121,23 @@ export const WebFormBuilderModal: React.FC<WebFormBuilderModalProps> = ({
   const [fieldSearchQuery, setFieldSearchQuery] = useState("");
   const [industryFilterMode, setIndustryFilterMode] = useState<"assigned" | "all">("assigned");
 
-  // Industry Dropdown State
-  const [isIndustryDropdownOpen, setIsIndustryDropdownOpen] = useState(false);
-
   // Selection states
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(
     initialForm.sections[0]?.fields[0]?.id || null
   );
   const [isSubmitButtonSelected, setIsSubmitButtonSelected] = useState(false);
+  const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
 
-  const [isDragOverCanvas, setIsDragOverCanvas] = useState(false);
+  // Available industries for current category
+  const availableIndustriesForCategory = useMemo(() => {
+    return getIndustriesByCategory(form.categoryId || form.categoryName || "All");
+  }, [form.categoryId, form.categoryName, getIndustriesByCategory]);
 
-  // Flatten all fields across sections for easy access
+  // Flatten all fields across sections for count & lookup
   const allFields = form.sections.flatMap((s) => s.fields);
   const selectedField = allFields.find((f) => f.id === selectedFieldId) || null;
+  const selectedSection = form.sections.find((s) => s.id === selectedSectionId) || null;
 
   // Active fields tailored by selected industry
   const availableIndustryFields = useMemo(() => {
@@ -179,6 +198,35 @@ export const WebFormBuilderModal: React.FC<WebFormBuilderModalProps> = ({
     }));
   };
 
+  const handleCategoryChange = (newCategoryId: string) => {
+    const selectedCategory = categories.find((c) => c.id === newCategoryId || c.name === newCategoryId);
+    const categoryName = selectedCategory ? selectedCategory.name : newCategoryId;
+    const matchingIndustries = getIndustriesByCategory(newCategoryId);
+    setForm((prev) => ({
+      ...prev,
+      categoryId: newCategoryId,
+      categoryName: categoryName,
+      industryId: "",
+      industryName: "",
+    }));
+    setIsCategoryDropdownOpen(false);
+  };
+
+  const handleIndustryChange = (newIndustryId: string) => {
+    const selectedBundle = bundles.find(
+      (b) => b.industryId === newIndustryId || b.id === newIndustryId
+    );
+    if (selectedBundle) {
+      setForm((prev) => ({
+        ...prev,
+        industryId: selectedBundle.industryId,
+        industryName: selectedBundle.industryName,
+        categoryName: selectedBundle.categoryName || prev.categoryName,
+      }));
+    }
+    setIsIndustryDropdownOpen(false);
+  };
+
   // Helper to generate a unique field key
   const generateFieldKey = (label: string) => {
     const slug = label.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
@@ -186,8 +234,56 @@ export const WebFormBuilderModal: React.FC<WebFormBuilderModalProps> = ({
     return `${slug || "field"}_${randomSuffix}`;
   };
 
-  // Add standard field to form
-  const handleAddField = (type: FormFieldType, labelOverride?: string) => {
+  // Add a new section container card (Section Break)
+  const handleAddSection = () => {
+    const newSectionIndex = form.sections.length + 1;
+    const newSec: FormSectionTemplate = {
+      id: `sec-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      title: `Section ${newSectionIndex}: Additional Details`,
+      description: "",
+      fields: [],
+    };
+
+    setForm((prev) => ({
+      ...prev,
+      sections: [...prev.sections, newSec],
+    }));
+    setSelectedSectionId(newSec.id);
+    setSelectedFieldId(null);
+    setIsSubmitButtonSelected(false);
+    setActiveSidebarTab("field_settings");
+  };
+
+  // Delete an entire section
+  const handleDeleteSection = (sectionId: string) => {
+    if (form.sections.length <= 1) {
+      alert("A form must have at least one section.");
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      sections: prev.sections.filter((s) => s.id !== sectionId),
+    }));
+    if (selectedSectionId === sectionId) {
+      setSelectedSectionId(null);
+    }
+  };
+
+  // Update a section's title or description
+  const handleUpdateSection = (sectionId: string, updates: Partial<FormSectionTemplate>) => {
+    setForm((prev) => ({
+      ...prev,
+      sections: prev.sections.map((sec) => (sec.id === sectionId ? { ...sec, ...updates } : sec)),
+    }));
+  };
+
+  // Add standard field to target section
+  const handleAddField = (type: FormFieldType, targetSectionId?: string, labelOverride?: string) => {
+    if (type === "section_break") {
+      handleAddSection();
+      return;
+    }
+
     const item = PALETTE_ITEMS.find((p) => p.type === type);
     const label = labelOverride || item?.label || "New Field";
     const newField: FormFieldTemplate = {
@@ -198,67 +294,71 @@ export const WebFormBuilderModal: React.FC<WebFormBuilderModalProps> = ({
       placeholder: item?.defaultPlaceholder || "",
       isRequired: false,
       fieldSource: "standard",
-      options:
-        type === "select" || type === "radio" || type === "checkbox"
-          ? [
-            { label: "Option 1", value: "option_1" },
-            { label: "Option 2", value: "option_2" },
-          ]
-          : undefined,
-      minCharacters: "",
-      maxCharacters: "",
-      conditionalLogic: {
-        enabled: false,
-        dependsOnFieldId: "",
-        operator: "equals",
-        value: "",
-      },
     };
 
-    let updatedSections = [...form.sections];
-    if (updatedSections.length === 0) {
-      updatedSections = [
-        {
-          id: `sec-1`,
-          title: "Form Details",
-          fields: [newField],
-        },
-      ];
-    } else {
-      updatedSections[0] = {
-        ...updatedSections[0],
-        fields: [...updatedSections[0].fields, newField],
-      };
-    }
+    const targetId = targetSectionId || selectedSectionId || form.sections[form.sections.length - 1]?.id;
 
-    setForm({ ...form, sections: updatedSections });
+    setForm((prev) => {
+      if (prev.sections.length === 0) {
+        return {
+          ...prev,
+          sections: [
+            {
+              id: `sec-${Date.now()}`,
+              title: "General Information",
+              description: "",
+              fields: [newField],
+            },
+          ],
+        };
+      }
+      return {
+        ...prev,
+        sections: prev.sections.map((sec) =>
+          sec.id === targetId || (!targetId && sec === prev.sections[prev.sections.length - 1])
+            ? { ...sec, fields: [...sec.fields, newField] }
+            : sec
+        ),
+      };
+    });
+
     setSelectedFieldId(newField.id);
+    setSelectedSectionId(null);
     setIsSubmitButtonSelected(false);
     setActiveSidebarTab("field_settings");
   };
 
-  // Add Predefined Field to form
-  const handleAddPredefinedField = (predefined: PredefinedFieldItem) => {
+  // Add Predefined Field to target section
+  const handleAddPredefinedField = (predefined: PredefinedFieldItem, targetSectionId?: string) => {
     const newField = createFormFieldFromPredefined(predefined);
+    const targetId = targetSectionId || selectedSectionId || form.sections[form.sections.length - 1]?.id;
 
-    let updatedSections = [...form.sections];
-    if (updatedSections.length === 0) {
-      updatedSections = [
-        {
-          id: `sec-1`,
-          title: "Form Details",
-          fields: [newField],
-        },
-      ];
-    } else {
-      updatedSections[0] = {
-        ...updatedSections[0],
-        fields: [...updatedSections[0].fields, newField],
+    setForm((prev) => {
+      if (prev.sections.length === 0) {
+        return {
+          ...prev,
+          sections: [
+            {
+              id: `sec-${Date.now()}`,
+              title: "General Information",
+              description: "",
+              fields: [newField],
+            },
+          ],
+        };
+      }
+      return {
+        ...prev,
+        sections: prev.sections.map((sec) =>
+          sec.id === targetId || (!targetId && sec === prev.sections[prev.sections.length - 1])
+            ? { ...sec, fields: [...sec.fields, newField] }
+            : sec
+        ),
       };
-    }
+    });
 
-    setForm({ ...form, sections: updatedSections });
     setSelectedFieldId(newField.id);
+    setSelectedSectionId(null);
     setIsSubmitButtonSelected(false);
     setActiveSidebarTab("field_settings");
   };
@@ -266,57 +366,182 @@ export const WebFormBuilderModal: React.FC<WebFormBuilderModalProps> = ({
   // Update selected field attributes
   const handleUpdateSelectedField = (updates: Partial<FormFieldTemplate>) => {
     if (!selectedFieldId) return;
-    const updatedSections = form.sections.map((sec) => ({
-      ...sec,
-      fields: sec.fields.map((f) => (f.id === selectedFieldId ? { ...f, ...updates } : f)),
+    setForm((prev) => ({
+      ...prev,
+      sections: prev.sections.map((sec) => ({
+        ...sec,
+        fields: sec.fields.map((f) => (f.id === selectedFieldId ? { ...f, ...updates } : f)),
+      })),
     }));
-    setForm({ ...form, sections: updatedSections });
   };
 
-  // Delete a field
-  const handleDeleteField = (fieldId: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    const updatedSections = form.sections.map((sec) => ({
-      ...sec,
-      fields: sec.fields.filter((f) => f.id !== fieldId),
+  // Delete field from form
+  const handleDeleteField = (fieldId: string) => {
+    setForm((prev) => ({
+      ...prev,
+      sections: prev.sections.map((sec) => ({
+        ...sec,
+        fields: sec.fields.filter((f) => f.id !== fieldId),
+      })),
     }));
-    setForm({ ...form, sections: updatedSections });
     if (selectedFieldId === fieldId) {
-      const remaining = updatedSections.flatMap((s) => s.fields);
-      setSelectedFieldId(remaining[0]?.id || null);
-      if (remaining.length === 0) {
-        setActiveSidebarTab("add_fields");
-      }
+      setSelectedFieldId(null);
     }
   };
 
-  // Duplicate a field
-  const handleDuplicateField = (fieldId: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    const target = allFields.find((f) => f.id === fieldId);
-    if (!target) return;
-
+  // Duplicate field
+  const handleDuplicateField = (field: FormFieldTemplate, sectionId: string) => {
     const clonedField: FormFieldTemplate = {
-      ...target,
+      ...field,
       id: `f-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      label: `${target.label} (Copy)`,
-      name: generateFieldKey(`${target.label}_copy`),
+      name: generateFieldKey(`${field.label}_copy`),
+      label: `${field.label} (Copy)`,
     };
 
-    const updatedSections = form.sections.map((sec) => {
-      const index = sec.fields.findIndex((f) => f.id === fieldId);
-      if (index !== -1) {
-        const nextFields = [...sec.fields];
-        nextFields.splice(index + 1, 0, clonedField);
-        return { ...sec, fields: nextFields };
-      }
-      return sec;
-    });
+    setForm((prev) => ({
+      ...prev,
+      sections: prev.sections.map((sec) => {
+        if (sec.id === sectionId) {
+          const index = sec.fields.findIndex((f) => f.id === field.id);
+          const nextFields = [...sec.fields];
+          nextFields.splice(index + 1, 0, clonedField);
+          return { ...sec, fields: nextFields };
+        }
+        return sec;
+      }),
+    }));
 
-    setForm({ ...form, sections: updatedSections });
     setSelectedFieldId(clonedField.id);
+    setSelectedSectionId(null);
     setIsSubmitButtonSelected(false);
     setActiveSidebarTab("field_settings");
+  };
+
+  const [dragOverFieldId, setDragOverFieldId] = useState<string | null>(null);
+
+  // Field Reordering Handler (Drag start from field on canvas)
+  const handleFieldDragStart = (e: React.DragEvent, fieldId: string, sectionId: string) => {
+    e.stopPropagation();
+    e.dataTransfer.setData(
+      "application/json",
+      JSON.stringify({ kind: "field_reorder", fieldId, sourceSectionId: sectionId })
+    );
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  // Field Drop on another field (Reorder or insert)
+  const handleFieldDropOnField = (
+    e: React.DragEvent,
+    targetFieldId: string,
+    targetSectionId: string
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverFieldId(null);
+    setDragOverSectionId(null);
+
+    const jsonString = e.dataTransfer.getData("application/json");
+    if (!jsonString) return;
+
+    try {
+      const payload = JSON.parse(jsonString);
+
+      // Case 1: Reordering existing field
+      if (payload.kind === "field_reorder") {
+        const { fieldId, sourceSectionId } = payload;
+        if (fieldId === targetFieldId) return;
+
+        setForm((prev) => {
+          let movingField: FormFieldTemplate | null = null;
+
+          // Remove field from source section
+          const newSections = prev.sections.map((sec) => {
+            if (sec.id === sourceSectionId) {
+              const f = sec.fields.find((item) => item.id === fieldId);
+              if (f) movingField = f;
+              return { ...sec, fields: sec.fields.filter((item) => item.id !== fieldId) };
+            }
+            return sec;
+          });
+
+          if (!movingField) return prev;
+
+          // Insert field at target position in target section
+          return {
+            ...prev,
+            sections: newSections.map((sec) => {
+              if (sec.id === targetSectionId) {
+                const targetIndex = sec.fields.findIndex((f) => f.id === targetFieldId);
+                const nextFields = [...sec.fields];
+                if (targetIndex >= 0) {
+                  nextFields.splice(targetIndex, 0, movingField!);
+                } else {
+                  nextFields.push(movingField!);
+                }
+                return { ...sec, fields: nextFields };
+              }
+              return sec;
+            }),
+          };
+        });
+
+        setSelectedFieldId(fieldId);
+        setSelectedSectionId(targetSectionId);
+        return;
+      }
+
+      // Case 2: Dropping new predefined field from palette directly onto a field position
+      if (payload.kind === "predefined" && payload.item) {
+        const newField = createFormFieldFromPredefined(payload.item);
+        setForm((prev) => ({
+          ...prev,
+          sections: prev.sections.map((sec) => {
+            if (sec.id === targetSectionId) {
+              const targetIndex = sec.fields.findIndex((f) => f.id === targetFieldId);
+              const nextFields = [...sec.fields];
+              nextFields.splice(targetIndex >= 0 ? targetIndex : nextFields.length, 0, newField);
+              return { ...sec, fields: nextFields };
+            }
+            return sec;
+          }),
+        }));
+        setSelectedFieldId(newField.id);
+        setSelectedSectionId(targetSectionId);
+        return;
+      }
+
+      // Case 3: Dropping new standard field from palette directly onto a field position
+      if (payload.kind === "standard" && payload.type) {
+        const item = PALETTE_ITEMS.find((p) => p.type === payload.type);
+        const label = item?.label || "New Field";
+        const newField: FormFieldTemplate = {
+          id: `f-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          label,
+          name: generateFieldKey(label),
+          type: payload.type,
+          placeholder: item?.defaultPlaceholder || "",
+          isRequired: false,
+          fieldSource: "standard",
+        };
+        setForm((prev) => ({
+          ...prev,
+          sections: prev.sections.map((sec) => {
+            if (sec.id === targetSectionId) {
+              const targetIndex = sec.fields.findIndex((f) => f.id === targetFieldId);
+              const nextFields = [...sec.fields];
+              nextFields.splice(targetIndex >= 0 ? targetIndex : nextFields.length, 0, newField);
+              return { ...sec, fields: nextFields };
+            }
+            return sec;
+          }),
+        }));
+        setSelectedFieldId(newField.id);
+        setSelectedSectionId(targetSectionId);
+        return;
+      }
+    } catch {
+      // fallback
+    }
   };
 
   // Drag & Drop Handlers from Palette
@@ -332,1012 +557,919 @@ export const WebFormBuilderModal: React.FC<WebFormBuilderModalProps> = ({
     e.dataTransfer.effectAllowed = "copy";
   };
 
-  const handleDropOnCanvas = (e: React.DragEvent) => {
+  const handleDropOnSection = (e: React.DragEvent, sectionId: string) => {
     e.preventDefault();
-    setIsDragOverCanvas(false);
+    setDragOverSectionId(null);
+    setDragOverFieldId(null);
 
-    try {
-      const jsonString = e.dataTransfer.getData("application/json");
-      if (jsonString) {
+    const jsonString = e.dataTransfer.getData("application/json");
+    if (jsonString) {
+      try {
         const payload = JSON.parse(jsonString);
+
+        // Moving field between sections
+        if (payload.kind === "field_reorder") {
+          const { fieldId, sourceSectionId } = payload;
+          setForm((prev) => {
+            let movingField: FormFieldTemplate | null = null;
+            const newSections = prev.sections.map((sec) => {
+              if (sec.id === sourceSectionId) {
+                const f = sec.fields.find((item) => item.id === fieldId);
+                if (f) movingField = f;
+                return { ...sec, fields: sec.fields.filter((item) => item.id !== fieldId) };
+              }
+              return sec;
+            });
+
+            if (!movingField) return prev;
+
+            return {
+              ...prev,
+              sections: newSections.map((sec) =>
+                sec.id === sectionId
+                  ? { ...sec, fields: [...sec.fields, movingField!] }
+                  : sec
+              ),
+            };
+          });
+          setSelectedFieldId(fieldId);
+          setSelectedSectionId(sectionId);
+          return;
+        }
+
         if (payload.kind === "predefined" && payload.item) {
-          handleAddPredefinedField(payload.item);
+          handleAddPredefinedField(payload.item, sectionId);
           return;
         }
         if (payload.kind === "standard" && payload.type) {
-          handleAddField(payload.type);
+          handleAddField(payload.type, sectionId);
           return;
         }
+      } catch {
+        // fallback
       }
-    } catch {
-      // fallback
     }
 
     const fieldType = e.dataTransfer.getData("text/plain") as FormFieldType;
     if (fieldType) {
-      handleAddField(fieldType);
+      handleAddField(fieldType, sectionId);
     }
   };
 
-  // Save changes
   const handleSave = () => {
-    onSave(form);
+    if (!form.title.trim()) {
+      alert("Please enter a form name.");
+      return;
+    }
+    onSave({
+      ...form,
+      updatedAt: new Date().toISOString(),
+    });
     onClose();
   };
 
-  const getFieldTypeIcon = (type: FormFieldType) => {
-    switch (type) {
-      case "phone":
-        return <Phone className="w-3.5 h-3.5" />;
-      case "email":
-        return <Mail className="w-3.5 h-3.5" />;
-      case "date":
-      case "time":
-        return <Calendar className="w-3.5 h-3.5" />;
-      case "number":
-      case "currency":
-        return <Hash className="w-3.5 h-3.5" />;
-      case "select":
-        return <ChevronsUpDown className="w-3.5 h-3.5" />;
-      case "checkbox":
-        return <CheckSquare className="w-3.5 h-3.5" />;
-      case "radio":
-        return <List className="w-3.5 h-3.5" />;
-      case "file":
-        return <UploadCloud className="w-3.5 h-3.5" />;
-      case "signature":
-        return <PenTool className="w-3.5 h-3.5" />;
-      case "textarea":
-        return <AlignLeft className="w-3.5 h-3.5" />;
-      default:
-        return <Type className="w-3.5 h-3.5" />;
-    }
-  };
-
-  const getModuleIcon = (moduleName: string) => {
-    switch (moduleName) {
-      case "Clients":
-        return <Users className="w-3.5 h-3.5 text-blue-500" />;
-      case "Appointments":
-        return <CalendarDays className="w-3.5 h-3.5 text-rose-500" />;
-      case "Call Logs":
-        return <PhoneCall className="w-3.5 h-3.5 text-emerald-500" />;
-      case "Processes":
-        return <Activity className="w-3.5 h-3.5 text-purple-500" />;
-      case "Products / Services":
-        return <Package className="w-3.5 h-3.5 text-sky-500" />;
-      case "Organisation":
-        return <Building2 className="w-3.5 h-3.5 text-amber-500" />;
-      default:
-        return <Folder className="w-3.5 h-3.5 text-indigo-500" />;
-    }
-  };
-
-  const getIndustryIcon = (industryName: string) => {
-    switch (industryName) {
-      case "Dental Practice":
-        return <Stethoscope className="w-3.5 h-3.5 text-rose-500" />;
-      case "Cardiology Specialist":
-        return <Activity className="w-3.5 h-3.5 text-red-500" />;
-      case "Personal Injury Law":
-        return <Scale className="w-3.5 h-3.5 text-purple-500" />;
-      case "Residential Real Estate":
-        return <Home className="w-3.5 h-3.5 text-emerald-500" />;
-      case "HVAC & Home Services":
-        return <Wrench className="w-3.5 h-3.5 text-orange-500" />;
-      case "Auto Dealership & Service":
-        return <Car className="w-3.5 h-3.5 text-amber-500" />;
-      case "SaaS / IT Consulting":
-        return <Cpu className="w-3.5 h-3.5 text-blue-500" />;
-      case "Executive Coaching":
-        return <Sparkles className="w-3.5 h-3.5 text-pink-500" />;
-      default:
-        return <Briefcase className="w-3.5 h-3.5 text-slate-500" />;
-    }
-  };
-
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-end bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0" onClick={onClose} />
 
-      {/* 64% Width Side Drawer (Right-aligned) */}
-      <div className="fixed inset-y-0 right-0 flex max-w-full pl-0 sm:pl-6 pointer-events-none">
-        <div className="w-screen w-full md:w-[64vw] max-w-[64vw] h-full bg-[#f8fafc] shadow-2xl border-l border-slate-200/90 overflow-hidden flex flex-col pointer-events-auto animate-in slide-in-from-right duration-300">
-          {/* TOP BAR */}
-          <div className="bg-white px-6 py-3.5 border-b border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors shrink-0"
-                title="Close Drawer"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
+      {/* Side Drawer with reduced width (80vw) */}
+      <div className="relative z-10 w-full sm:w-[75vw] md:w-[78vw] lg:w-[80vw] max-w-[80vw] h-full bg-[#fafbfc] shadow-2xl border-l border-slate-200 flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+        {/* 1. TOP BAR / STICKY HEADER (Shows Add Web Form only, clean layout) */}
+        <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#181e25] to-[#2c3e50] text-white flex items-center justify-center font-bold text-sm shadow-xs">
+              <Layers className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-base text-[#181e25]">
+                {initialForm?.title ? "Edit Web Form" : "Add Web Form"}
+              </h3>
+              <p className="text-xs text-slate-500">
+                Design dynamic customer intake questionnaires, booking forms, and qualification surveys
+              </p>
+            </div>
+          </div>
 
-              <div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    className="font-bold text-base sm:text-lg text-[#181e25] bg-transparent hover:bg-slate-50 focus:bg-white px-1.5 py-0.5 rounded-lg border border-transparent hover:border-slate-200 focus:border-blue-400 outline-none transition-all"
-                    placeholder="Form Title"
-                  />
-                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 font-mono text-[10px] font-bold uppercase tracking-wider shrink-0">
-                    {`FORM_${(form.slug || form.id).replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 12)}`}
-                  </span>
-                </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* 2. DRAWER SCROLLABLE BODY */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 custom-scrollbar space-y-4">
+          {/* Top Card: Compact Form Details Div (30/70 Ratio) */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
+            {/* ROW 1: Form Name (30%) + Description (70%) in SAME ROW */}
+            <div className="flex flex-col sm:flex-row items-start gap-4">
+              {/* Form Name (30%) */}
+              <div className="w-full sm:w-[30%] space-y-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                  Form Name *
+                </label>
+                <input
+                  type="text"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  placeholder="e.g. Patient Intake Form"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1456f0]/40 outline-none font-semibold text-[#181e25] placeholder:text-slate-400"
+                />
+              </div>
+
+              {/* Description (70%) */}
+              <div className="w-full sm:w-[70%] space-y-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                  Description / Purpose
+                </label>
                 <input
                   type="text"
                   value={form.description || ""}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="text-xs text-slate-500 bg-transparent hover:bg-slate-50 focus:bg-white px-1.5 py-0.5 rounded-lg border border-transparent hover:border-slate-200 focus:border-blue-400 outline-none w-full max-w-sm"
-                  placeholder="Add form description..."
+                  placeholder="e.g. Capture client registration details and medical history"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50/70 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1456f0]/40 outline-none text-[#181e25] placeholder:text-slate-400"
                 />
               </div>
             </div>
 
-            {/* Action Buttons on Right */}
-            <div className="flex items-center gap-2.5 flex-wrap">
-              {/* CUSTOM INDUSTRY DROPDOWN */}
-              <div className="relative">
+            {/* ROW 2: Industry Category (30%) + Industry (70%) in SAME ROW */}
+            <div className="flex flex-col sm:flex-row items-start gap-4 pt-0.5">
+              {/* 1. Custom Industry Category Dropdown (30%) */}
+              <div className="w-full sm:w-[30%] space-y-1 relative">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                  Industry Category *
+                </label>
                 <button
                   type="button"
-                  onClick={() => setIsIndustryDropdownOpen(!isIndustryDropdownOpen)}
-                  className={`flex items-center gap-2 bg-slate-50 hover:bg-slate-100/90 border px-3 py-1.5 rounded-xl shadow-2xs transition-all text-left cursor-pointer group ${isIndustryDropdownOpen ? "border-[#1456f0] ring-2 ring-[#1456f0]/20 bg-white" : "border-slate-200 hover:border-slate-300"
-                    }`}
+                  onClick={() => {
+                    setIsCategoryDropdownOpen(!isCategoryDropdownOpen);
+                    setIsIndustryDropdownOpen(false);
+                  }}
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl font-semibold text-[#181e25] flex items-center justify-between shadow-2xs transition-all text-left cursor-pointer"
                 >
-                  <div className="w-6 h-6 rounded-lg bg-white shadow-2xs border border-slate-200/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                    {getIndustryIcon(form.industryName || "General / Universal")}
-                  </div>
-                  <div className="flex flex-col pr-0.5">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none">
-                      Industry
-                    </span>
-                    <span className="text-xs font-bold text-[#181e25] max-w-[170px] truncate">
-                      {form.industryName || "General / Universal"}
-                    </span>
-                  </div>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isIndustryDropdownOpen ? "rotate-180 text-[#1456f0]" : ""}`} />
+                  <span className="truncate">{form.categoryName || "Select Category"}</span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isCategoryDropdownOpen ? "rotate-180 text-[#1456f0]" : ""}`} />
                 </button>
 
-                {/* Popover Menu */}
-                {isIndustryDropdownOpen && (
+                {isCategoryDropdownOpen && (
                   <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setIsIndustryDropdownOpen(false)}
-                    />
-                    <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl border border-slate-200/90 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-1">
-                      <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1.5 flex items-center justify-between">
-                        <span>Select Form Industry</span>
-                        <span className="text-[10px] font-mono text-slate-400 font-normal">
-                          {AVAILABLE_INDUSTRIES_LIST.length} options
-                        </span>
-                      </div>
-                      <div className="max-h-[320px] overflow-y-auto custom-scrollbar space-y-1 pt-0.5">
-                        {AVAILABLE_INDUSTRIES_LIST.map((ind) => {
-                          const isSelected =
-                            (form.industryName || "General / Universal") === ind.name ||
-                            form.industryId === ind.id;
-                          return (
-                            <button
-                              key={ind.id}
-                              type="button"
-                              onClick={() => {
-                                setForm({
-                                  ...form,
-                                  industryName: ind.name,
-                                  industryId: ind.id,
-                                });
-                                setIsIndustryDropdownOpen(false);
-                              }}
-                              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${isSelected
-                                  ? "bg-blue-50/90 text-[#1456f0] font-bold shadow-2xs"
-                                  : "text-slate-700 hover:bg-slate-50 hover:text-[#181e25]"
-                                }`}
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <div className="w-6 h-6 rounded-lg bg-slate-100/90 flex items-center justify-center shrink-0">
-                                  {getIndustryIcon(ind.name)}
-                                </div>
-                                <div className="flex flex-col text-left truncate">
-                                  <span className="truncate">{ind.name}</span>
-                                  <span className="text-[10px] text-slate-400 font-normal truncate">
-                                    {ind.category}
-                                  </span>
-                                </div>
-                              </div>
-                              {isSelected && (
-                                <Check className="w-3.5 h-3.5 text-[#1456f0] shrink-0" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
+                    <div className="fixed inset-0 z-30" onClick={() => setIsCategoryDropdownOpen(false)} />
+                    <div className="absolute top-full left-0 right-0 mt-1.5 z-40 bg-white border border-slate-200/90 rounded-2xl shadow-xl p-1.5 max-h-56 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-150 space-y-0.5">
+                      {categories.map((c) => {
+                        const isSelected = form.categoryId === c.id || form.categoryName === c.name;
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => handleCategoryChange(c.id)}
+                            className={`w-full px-3 py-2 text-xs font-semibold rounded-xl flex items-center justify-between text-left transition-all cursor-pointer ${isSelected ? "bg-blue-50 text-[#1456f0] font-bold" : "text-slate-700 hover:bg-slate-50"
+                              }`}
+                          >
+                            <span className="truncate">{c.name}</span>
+                            {isSelected && <Check className="w-3.5 h-3.5 text-[#1456f0] shrink-0" />}
+                          </button>
+                        );
+                      })}
                     </div>
                   </>
                 )}
               </div>
 
-              {/* Save Changes Button */}
-              <button
-                type="button"
-                onClick={handleSave}
-                className="px-4 py-2 rounded-xl bg-[#181e25] hover:bg-black text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all"
-              >
-                <Save className="w-3.5 h-3.5 text-slate-300" />
-                <span>Save Changes</span>
-              </button>
+              {/* 2. Custom Industry Dropdown (70%) */}
+              <div className="w-full sm:w-[70%] space-y-1 relative">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                  Industry *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsIndustryDropdownOpen(!isIndustryDropdownOpen);
+                    setIsCategoryDropdownOpen(false);
+                  }}
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl font-semibold text-[#181e25] flex items-center justify-between shadow-2xs transition-all text-left cursor-pointer"
+                >
+                  <span className="truncate">{form.industryName || "Select Industry"}</span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isIndustryDropdownOpen ? "rotate-180 text-[#1456f0]" : ""}`} />
+                </button>
+
+                {isIndustryDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-30" onClick={() => setIsIndustryDropdownOpen(false)} />
+                    <div className="absolute top-full left-0 right-0 mt-1.5 z-40 bg-white border border-slate-200/90 rounded-2xl shadow-xl p-1.5 max-h-56 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-150 space-y-0.5">
+                      {availableIndustriesForCategory.map((ind) => {
+                        const isSelected = form.industryId === ind.id;
+                        return (
+                          <button
+                            key={ind.id}
+                            type="button"
+                            onClick={() => handleIndustryChange(ind.id)}
+                            className={`w-full px-3 py-2 text-xs font-semibold rounded-xl flex items-center justify-between text-left transition-all cursor-pointer ${isSelected ? "bg-blue-50 text-[#1456f0] font-bold" : "text-slate-700 hover:bg-slate-50"
+                              }`}
+                          >
+                            <span className="truncate">{ind.name}</span>
+                            {isSelected && <Check className="w-3.5 h-3.5 text-[#1456f0] shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* MAIN BODY: 2-Column Canvas + Side Palette */}
-          <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-              {/* LEFT CANVAS WORKSPACE (7 cols in 64vw drawer) */}
-              <div
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setIsDragOverCanvas(true);
-                }}
-                onDragLeave={() => setIsDragOverCanvas(false)}
-                onDrop={handleDropOnCanvas}
-                className={`lg:col-span-7 bg-white rounded-3xl p-5 border transition-all min-h-[560px] flex flex-col justify-start space-y-3.5 shadow-xs ${isDragOverCanvas
-                    ? "border-blue-500 ring-4 ring-blue-500/10 bg-blue-50/20"
-                    : "border-slate-200/90"
-                  }`}
-              >
-                {/* Header info */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-[#1456f0]" />
-                    <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700">
-                      Form Visual Canvas ({allFields.length} Fields)
-                    </h3>
-                  </div>
-                  <span className="text-[11px] text-slate-400 font-medium">
-                    Industry: <strong className="text-slate-700">{form.industryName || "General"}</strong>
-                  </span>
-                </div>
-
-                {/* If Canvas is Empty: Show Dashed Dropzone */}
-                {allFields.length === 0 ? (
-                  <div className="flex-1 flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/40 text-center space-y-3 min-h-[360px]">
-                    <div className="w-12 h-12 rounded-full bg-blue-50 text-[#1456f0] flex items-center justify-center shadow-2xs">
-                      <Plus className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-base text-[#181e25]">
-                        Canvas is empty
-                      </h4>
-                      <p className="text-xs text-slate-500 max-w-xs mt-1">
-                        Drag fields from the standard palette or open the <strong>Select Field</strong> dropdown below to drop fields directly into your form.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  /* List of Fields on Canvas */
-                  <div className="space-y-3">
-                    {allFields.map((field) => {
-                      const isSelected = field.id === selectedFieldId && !isSubmitButtonSelected;
-
-                      return (
-                        <div
-                          key={field.id}
-                          onClick={() => {
-                            setSelectedFieldId(field.id);
-                            setIsSubmitButtonSelected(false);
-                            setActiveSidebarTab("field_settings");
-                          }}
-                          className={`
-                            group relative p-3.5 rounded-2xl transition-all cursor-pointer border
-                            ${isSelected
-                              ? "bg-white border-[#1456f0] ring-2 ring-[#1456f0]/20 shadow-sm"
-                              : "bg-white hover:bg-slate-50/80 border-slate-200/80 shadow-2xs"
-                            }
-                          `}
-                        >
-                          {/* Top Row: Grip Handle, Label, and Action Icons */}
-                          <div className="flex items-center justify-between gap-2 mb-2">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <GripVertical className="w-4 h-4 text-slate-300 group-hover:text-slate-500 shrink-0" />
-                              <span className="font-bold text-xs text-[#181e25]">
-                                {field.label}
-                              </span>
-                              {field.isRequired && (
-                                <span className="text-rose-500 font-bold text-xs">*</span>
-                              )}
-                              {field.name && (
-                                <span className="text-[10.5px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-                                  {field.name}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Quick Action Icons */}
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                type="button"
-                                onClick={(e) => handleDuplicateField(field.id, e)}
-                                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                                title="Duplicate Field"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => handleDeleteField(field.id, e)}
-                                className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                                title="Delete Field"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Helper Description if any */}
-                          {field.helperText && (
-                            <p className="text-[11px] text-slate-400 mb-2">
-                              {field.helperText}
-                            </p>
-                          )}
-
-                          {/* Field Input Preview */}
-                          <div className="pointer-events-none opacity-85">
-                            {field.type === "textarea" ? (
-                              <textarea
-                                rows={2}
-                                disabled
-                                placeholder={field.placeholder || "Enter paragraph text..."}
-                                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl resize-none text-slate-500"
-                              />
-                            ) : field.type === "select" ? (
-                              <div className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-slate-500">
-                                <span>{field.options?.[0]?.label || "Select an option..."}</span>
-                                <ChevronsUpDown className="w-3.5 h-3.5 text-slate-400" />
-                              </div>
-                            ) : field.type === "checkbox" ? (
-                              <div className="space-y-1.5 pt-1">
-                                {(field.options || [{ label: "Option 1", value: "1" }]).map((opt, i) => (
-                                  <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
-                                    <input type="checkbox" disabled className="rounded border-slate-300" />
-                                    <span>{opt.label}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : field.type === "radio" ? (
-                              <div className="space-y-1.5 pt-1">
-                                {(field.options || [{ label: "Option 1", value: "1" }]).map((opt, i) => (
-                                  <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
-                                    <input type="radio" disabled className="border-slate-300" />
-                                    <span>{opt.label}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : field.type === "signature" ? (
-                              <div className="w-full h-14 bg-slate-50 border border-dashed border-slate-200 rounded-xl flex items-center justify-center text-xs text-slate-400">
-                                <PenTool className="w-4 h-4 mr-2" /> Sign here
-                              </div>
-                            ) : field.type === "file" ? (
-                              <div className="w-full py-2.5 bg-slate-50 border border-dashed border-slate-200 rounded-xl flex items-center justify-center text-xs text-slate-400">
-                                <UploadCloud className="w-4 h-4 mr-2" /> Upload file
-                              </div>
-                            ) : field.type === "section_break" ? (
-                              <div className="py-2 flex items-center gap-3">
-                                <div className="h-[1px] bg-slate-200 flex-1" />
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                  Section Break
-                                </span>
-                                <div className="h-[1px] bg-slate-200 flex-1" />
-                              </div>
-                            ) : field.type === "page_break" ? (
-                              <div className="p-2 bg-blue-50/60 border border-dashed border-blue-200 rounded-xl text-center text-xs font-bold text-blue-600">
-                                — PAGE BREAK —
-                              </div>
-                            ) : field.type === "html" ? (
-                              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-mono text-slate-500">
-                                &lt;div&gt;Custom HTML Block&lt;/div&gt;
-                              </div>
-                            ) : (
-                              <input
-                                type="text"
-                                disabled
-                                placeholder={field.placeholder || `Enter ${field.label}...`}
-                                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-500"
-                              />
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* SIMPLE SUBMIT BUTTON ON CANVAS */}
-                <div className="pt-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedFieldId(null);
-                      setIsSubmitButtonSelected(true);
-                      setActiveSidebarTab("field_settings");
-                    }}
-                    className={`px-6 py-2.5 rounded-xl font-bold text-xs transition-all shadow-xs cursor-pointer ${isSubmitButtonSelected
-                        ? "bg-[#1456f0] text-white ring-4 ring-[#1456f0]/25"
-                        : "bg-[#1456f0] hover:bg-blue-700 text-white"
-                      }`}
-                  >
-                    {form.submitButtonText || "Submit"}
-                  </button>
+          {/* 3. FORM BUILDER WORKSPACE */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            {/* LEFT CANVAS WORKSPACE (7 cols) */}
+            <div className="lg:col-span-7 space-y-4">
+              {/* Canvas Header */}
+              <div className="flex items-center justify-between bg-white px-4 py-3 rounded-2xl border border-slate-200/90 shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-[#1456f0]" />
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700">
+                    Form Visual Canvas ({form.sections.length} {form.sections.length === 1 ? "Section" : "Sections"} &bull; {allFields.length} Fields)
+                  </h3>
                 </div>
               </div>
 
-              {/* RIGHT SIDEBAR: Add Fields & Field Settings Tabs (5 cols in 64vw drawer) */}
-              <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col min-h-[560px]">
-                {/* Top 2 Primary Tabs */}
-                <div className="grid grid-cols-2 border-b border-slate-200/80 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setActiveSidebarTab("add_fields")}
-                    className={`py-3.5 text-xs font-bold transition-all border-b-2 flex items-center justify-center gap-1.5 ${activeSidebarTab === "add_fields"
-                        ? "text-[#1456f0] border-[#1456f0] bg-blue-50/20"
-                        : "text-slate-500 border-transparent hover:text-slate-800"
-                      }`}
+              {/* Sections List on Canvas */}
+              {form.sections.length === 0 ? (
+                <div className="p-12 text-center bg-white rounded-3xl border border-dashed border-slate-300 space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#1456f0] flex items-center justify-center mx-auto shadow-2xs">
+                    <Layers className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-sm font-bold text-[#181e25]">No Sections in this Form</h4>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    Start building your form by creating a section or dragging fields from the left palette.
+                  </p>
+                  <Pill
+                    variant="navy"
+                    size="sm"
+                    icon={<Plus className="w-4 h-4" />}
+                    onClick={handleAddSection}
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    Add Fields
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveSidebarTab("field_settings")}
-                    className={`py-3.5 text-xs font-bold transition-all border-b-2 flex items-center justify-center gap-1.5 ${activeSidebarTab === "field_settings"
-                        ? "text-[#1456f0] border-[#1456f0] bg-blue-50/20"
-                        : "text-slate-500 border-transparent hover:text-slate-800"
-                      }`}
-                  >
-                    <SlidersHorizontal className="w-3.5 h-3.5" />
-                    {isSubmitButtonSelected ? "Button Settings" : "Field Settings"}
-                  </button>
+                    Add First Section
+                  </Pill>
                 </div>
+              ) : (
+                form.sections.map((section, secIdx) => {
+                  const isSectionSelected = section.id === selectedSectionId;
+                  const isDragOver = dragOverSectionId === section.id;
 
-                {/* TAB 1: ADD FIELDS PALETTE */}
-                {activeSidebarTab === "add_fields" && (
-                  <div className="p-4 space-y-4 flex-1 overflow-y-auto custom-scrollbar max-h-[720px]">
-                    {/* 1. TOP SECTION: STANDARD INPUT PALETTE */}
-                    <div className="space-y-2.5">
-                      <p className="text-xs text-slate-500">
-                        Drag a field to the left to start building your form.
-                      </p>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        {PALETTE_ITEMS.map((item) => {
-                          const Icon = item.icon;
-
-                          return (
-                            <div
-                              key={item.type}
-                              draggable
-                              onDragStart={(e) => handleDragStartFromStandardPalette(e, item.type)}
-                              onClick={() => handleAddField(item.type)}
-                              className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50/80 hover:bg-blue-50/80 border border-slate-200/80 hover:border-blue-300 text-slate-700 hover:text-[#1456f0] cursor-grab active:cursor-grabbing transition-all text-center group shadow-2xs hover:shadow-xs"
-                            >
-                              <Icon className="w-4 h-4 text-slate-500 group-hover:text-[#1456f0] mb-1.5 transition-colors" />
-                              <span className="font-semibold text-[11px] leading-tight">
-                                {item.label}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* DIVIDER */}
-                    <div className="pt-2 border-t border-slate-200/80" />
-
-                    {/* 2. BOTTOM SECTION: UNIFIED SELECT FIELD DROPDOWN WITH INDUSTRY CUSTOM FIELDS */}
-                    <div className="rounded-2xl border border-slate-200/90 bg-white overflow-hidden shadow-2xs transition-all">
-                      {/* Main Select Field Collapsible Header / Trigger */}
-                      <button
-                        type="button"
-                        onClick={() => setIsSelectFieldDropdownOpen(!isSelectFieldDropdownOpen)}
-                        className={`w-full flex items-center justify-between p-3.5 transition-colors font-bold text-xs ${isSelectFieldDropdownOpen
-                            ? "bg-slate-100/90 text-[#181e25] border-b border-slate-200"
-                            : "bg-slate-50 hover:bg-slate-100/80 text-slate-800"
-                          }`}
+                  return (
+                    <div
+                      key={section.id}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDragOverSectionId(section.id);
+                      }}
+                      onDragLeave={() => setDragOverSectionId(null)}
+                      onDrop={(e) => handleDropOnSection(e, section.id)}
+                      className={`bg-white rounded-3xl p-5 border transition-all space-y-3.5 shadow-xs ${isDragOver
+                        ? "border-blue-500 ring-4 ring-blue-500/10 bg-blue-50/20"
+                        : isSectionSelected
+                          ? "border-[#1456f0] ring-2 ring-[#1456f0]/20"
+                          : "border-slate-200/90"
+                        }`}
+                    >
+                      {/* Section Header */}
+                      <div
+                        onClick={() => {
+                          setSelectedSectionId(section.id);
+                          setSelectedFieldId(null);
+                          setIsSubmitButtonSelected(false);
+                          setActiveSidebarTab("field_settings");
+                        }}
+                        className="flex items-center justify-between border-b border-slate-100 pb-3 cursor-pointer group"
                       >
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-6 h-6 rounded-lg bg-blue-50 text-[#1456f0] flex items-center justify-center shadow-2xs">
-                            <Database className="w-3.5 h-3.5" />
-                          </div>
-                          <span className="font-bold">Select Field</span>
-                          <span className="px-1.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700 font-mono text-[10px]">
-                            {availableIndustryFields.length}
+                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-bold text-[10px] uppercase shrink-0">
+                            Section {secIdx + 1}
                           </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-slate-400">
-                          <span className="text-[11px] font-normal text-slate-500">
-                            {isSelectFieldDropdownOpen ? "Collapse" : "Expand"}
-                          </span>
-                          {isSelectFieldDropdownOpen ? (
-                            <ChevronDown className="w-4 h-4 text-slate-600" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4 text-slate-500" />
-                          )}
-                        </div>
-                      </button>
-
-                      {/* Dropdown Content seamlessly attached directly inside */}
-                      {isSelectFieldDropdownOpen && (
-                        <div className="p-3 bg-slate-50/50 space-y-2.5 animate-in fade-in duration-150">
-                          {/* Search Input for fast filtering */}
-                          <div className="relative">
-                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                            <input
-                              type="text"
-                              value={fieldSearchQuery}
-                              onChange={(e) => setFieldSearchQuery(e.target.value)}
-                              placeholder="Search all fields..."
-                              className="w-full pl-8 pr-7 py-2 text-xs bg-white border border-slate-200/90 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 placeholder:text-slate-400 text-[#181e25]"
-                            />
-                            {fieldSearchQuery && (
-                              <button
-                                type="button"
-                                onClick={() => setFieldSearchQuery("")}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
+                          <div className="flex flex-col min-w-0">
+                            <h4 className="font-bold text-xs text-[#181e25] truncate group-hover:text-[#1456f0] transition-colors">
+                              {section.title || "Untitled Section"}
+                            </h4>
+                            {section.description && (
+                              <p className="text-[11px] text-slate-400 truncate">
+                                {section.description}
+                              </p>
                             )}
                           </div>
+                        </div>
 
-                          {/* Industry scope filter banner */}
-                          <div className="flex items-center justify-between text-[10.5px] bg-white p-1.5 rounded-lg border border-slate-200">
-                            <span className="text-slate-500 truncate">
-                              Scope: <strong className="text-[#1456f0]">{form.industryName || "General"}</strong>
-                            </span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {form.sections.length > 1 && (
                             <button
                               type="button"
-                              onClick={() =>
-                                setIndustryFilterMode(
-                                  industryFilterMode === "assigned" ? "all" : "assigned"
-                                )
-                              }
-                              className="text-[10px] font-bold text-[#1456f0] hover:underline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteSection(section.id);
+                              }}
+                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                              title="Delete Section"
                             >
-                              {industryFilterMode === "assigned" ? "Show All Industries" : "Filter to Industry"}
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* If Section is Empty: Show Empty Square Container */}
+                      {section.fields.length === 0 ? (
+                        <div
+                          onClick={() => {
+                            setSelectedSectionId(section.id);
+                            setSelectedFieldId(null);
+                            setIsSubmitButtonSelected(false);
+                          }}
+                          className="py-10 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 text-center flex flex-col items-center justify-center space-y-2 cursor-pointer hover:bg-slate-50 transition-colors"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-blue-50 text-[#1456f0] flex items-center justify-center">
+                            <Plus className="w-4 h-4" />
                           </div>
+                          <div>
+                            <p className="font-bold text-xs text-slate-700">This section is empty</p>
+                            <p className="text-[11px] text-slate-400">
+                              Drag fields here or click items from the palette to add to this section.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Fields in this Section */
+                        <div className="space-y-3">
+                          {section.fields.map((field) => {
+                            const isSelected = field.id === selectedFieldId && !isSubmitButtonSelected;
+                            const isFieldDragOver = dragOverFieldId === field.id;
 
-                          {/* Nested Module Dropdowns */}
-                          <div className="space-y-2">
-                            {moduleList.length === 0 ? (
-                              <div className="py-6 text-center text-slate-400 text-xs">
-                                No matching fields found for this industry.
-                              </div>
-                            ) : (
-                              moduleList.map((moduleName) => {
-                                const fieldsInModule = groupedFieldsByModule[moduleName] || [];
-                                const isOpen = !!openModuleDropdowns[moduleName];
+                            return (
+                              <div
+                                key={field.id}
+                                draggable={true}
+                                onDragStart={(e) => handleFieldDragStart(e, field.id, section.id)}
+                                onDragOver={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setDragOverFieldId(field.id);
+                                }}
+                                onDragLeave={(e) => {
+                                  e.stopPropagation();
+                                  setDragOverFieldId(null);
+                                }}
+                                onDrop={(e) => handleFieldDropOnField(e, field.id, section.id)}
+                                onClick={() => {
+                                  setSelectedFieldId(field.id);
+                                  setSelectedSectionId(section.id);
+                                  setIsSubmitButtonSelected(false);
+                                  setActiveSidebarTab("field_settings");
+                                }}
+                                className={`
+                                group relative p-3.5 rounded-2xl transition-all cursor-pointer border select-none
+                                ${isFieldDragOver
+                                    ? "border-blue-500 ring-2 ring-blue-500/30 bg-blue-50/30"
+                                    : isSelected
+                                      ? "bg-white border-[#1456f0] ring-2 ring-[#1456f0]/20 shadow-sm"
+                                      : "bg-white hover:bg-slate-50/80 border-slate-200/80 shadow-2xs"
+                                  }
+                              `}
+                              >
+                                {/* Top Row: Grip, Label, and Actions */}
+                                <div className="flex items-center justify-between gap-2 mb-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <GripVertical className="w-4 h-4 text-slate-400 group-hover:text-[#1456f0] shrink-0 cursor-grab active:cursor-grabbing" />
+                                    <span className="font-bold text-xs text-[#181e25]">
+                                      {field.label}
+                                    </span>
+                                    {field.isRequired && (
+                                      <span className="text-rose-500 font-bold">*</span>
+                                    )}
+                                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+                                      {field.name}
+                                    </span>
+                                  </div>
 
-                                return (
-                                  <div
-                                    key={moduleName}
-                                    className="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-2xs"
-                                  >
-                                    {/* Sub-dropdown Accordion Header */}
+                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
                                       type="button"
-                                      onClick={() => toggleModuleDropdown(moduleName)}
-                                      className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-[#181e25] transition-colors text-xs font-bold"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDuplicateField(field, section.id);
+                                      }}
+                                      className="p-1 rounded-lg text-slate-400 hover:text-[#1456f0] hover:bg-blue-50 transition-colors"
+                                      title="Duplicate Field"
                                     >
-                                      <div className="flex items-center gap-2">
-                                        {getModuleIcon(moduleName)}
-                                        <span>{moduleName}</span>
-                                        <span className="text-[10px] text-slate-400 font-mono font-normal">
-                                          ({fieldsInModule.length})
-                                        </span>
-                                      </div>
-                                      <div className="text-slate-400">
-                                        {isOpen ? (
-                                          <ChevronDown className="w-3.5 h-3.5" />
-                                        ) : (
-                                          <ChevronRight className="w-3.5 h-3.5" />
-                                        )}
-                                      </div>
+                                      <Copy className="w-3.5 h-3.5" />
                                     </button>
-
-                                    {/* Sub-dropdown Fields List */}
-                                    {isOpen && (
-                                      <div className="p-2 border-t border-slate-100 bg-slate-50/50 space-y-1.5 max-h-[300px] overflow-y-auto custom-scrollbar">
-                                        {fieldsInModule.map((field) => (
-                                          <div
-                                            key={field.id}
-                                            draggable
-                                            onDragStart={(e) => handleDragStartFromPredefined(e, field)}
-                                            onClick={() => handleAddPredefinedField(field)}
-                                            className="px-2.5 py-2 rounded-lg bg-white hover:bg-blue-50/70 border border-slate-200/70 hover:border-blue-300 transition-all cursor-grab active:cursor-grabbing group shadow-2xs flex items-center justify-between gap-2"
-                                            title="Drag to form or click to add"
-                                          >
-                                            <div className="flex items-center gap-2 min-w-0">
-                                              <div className="w-5 h-5 rounded-md bg-slate-100 text-slate-500 group-hover:bg-blue-100 group-hover:text-[#1456f0] flex items-center justify-center shrink-0">
-                                                {getFieldTypeIcon(field.type)}
-                                              </div>
-                                              <span className="text-xs font-semibold text-[#181e25] truncate">
-                                                {field.label}
-                                              </span>
-                                            </div>
-
-                                            <button
-                                              type="button"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleAddPredefinedField(field);
-                                              }}
-                                              className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-[#1456f0] transition-colors shrink-0"
-                                              title="Add to form"
-                                            >
-                                              <Plus className="w-3.5 h-3.5" />
-                                            </button>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteField(field.id);
+                                      }}
+                                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                      title="Delete Field"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
                                   </div>
-                                );
-                              })
-                            )}
-                          </div>
+                                </div>
+
+                                {/* Helper Description */}
+                                {field.helperText && (
+                                  <p className="text-[11px] text-slate-400 mb-2">
+                                    {field.helperText}
+                                  </p>
+                                )}
+
+                                {/* Field Preview */}
+                                <div className="pointer-events-none opacity-85">
+                                  {field.type === "textarea" ? (
+                                    <textarea
+                                      rows={2}
+                                      disabled
+                                      placeholder={field.placeholder || "Enter paragraph text..."}
+                                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl resize-none text-slate-500"
+                                    />
+                                  ) : field.type === "select" ? (
+                                    <div className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-slate-500">
+                                      <span>{field.options?.[0]?.label || "Select an option..."}</span>
+                                      <ChevronsUpDown className="w-3.5 h-3.5 text-slate-400" />
+                                    </div>
+                                  ) : field.type === "checkbox" ? (
+                                    <div className="space-y-1.5 pt-1">
+                                      {(field.options || [{ label: "Option 1", value: "1" }]).map((opt, i) => (
+                                        <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
+                                          <input type="checkbox" disabled className="rounded border-slate-300" />
+                                          <span>{opt.label}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : field.type === "radio" ? (
+                                    <div className="space-y-1.5 pt-1">
+                                      {(field.options || [{ label: "Option 1", value: "1" }]).map((opt, i) => (
+                                        <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
+                                          <input type="radio" disabled className="border-slate-300" />
+                                          <span>{opt.label}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : field.type === "signature" ? (
+                                    <div className="w-full h-14 bg-slate-50 border border-dashed border-slate-200 rounded-xl flex items-center justify-center text-xs text-slate-400">
+                                      <PenTool className="w-4 h-4 mr-2" /> Sign here
+                                    </div>
+                                  ) : field.type === "file" ? (
+                                    <div className="w-full py-2.5 bg-slate-50 border border-dashed border-slate-200 rounded-xl flex items-center justify-center text-xs text-slate-400">
+                                      <UploadCloud className="w-4 h-4 mr-2" /> Upload file
+                                    </div>
+                                  ) : field.type === "page_break" ? (
+                                    <div className="p-2 bg-blue-50/60 border border-dashed border-blue-200 rounded-xl text-center text-xs font-bold text-blue-600">
+                                      — PAGE BREAK —
+                                    </div>
+                                  ) : field.type === "html" ? (
+                                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-mono text-slate-500">
+                                      &lt;div&gt;Custom HTML Block&lt;/div&gt;
+                                    </div>
+                                  ) : (
+                                    <input
+                                      type="text"
+                                      disabled
+                                      placeholder={field.placeholder || `Enter ${field.label}...`}
+                                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-500"
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
+                  );
+                })
+              )}
+
+              {/* Bottom Submit Button Card on Canvas */}
+              <div
+                onClick={() => {
+                  setIsSubmitButtonSelected(true);
+                  setSelectedFieldId(null);
+                  setSelectedSectionId(null);
+                  setActiveSidebarTab("field_settings");
+                }}
+                className={`
+                  p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between bg-white shadow-xs
+                  ${isSubmitButtonSelected
+                    ? "border-[#1456f0] ring-2 ring-[#1456f0]/20"
+                    : "hover:bg-slate-50/80 border-slate-200/80 shadow-2xs"
+                  }
+                `}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="px-4 py-2 rounded-xl bg-[#1456f0] text-white font-bold text-xs shadow-xs pointer-events-none">
+                    {form.submitButtonText || "Submit Registration"}
                   </div>
-                )}
+                  <span className="text-xs text-slate-400 font-medium">
+                    (Click to customize submit button label & success message)
+                  </span>
+                </div>
+              </div>
+            </div>
 
-                {/* TAB 2: FIELD SETTINGS / BUTTON SETTINGS */}
-                {activeSidebarTab === "field_settings" && (
-                  <div className="p-4 space-y-4 max-h-[580px] overflow-y-auto custom-scrollbar flex-1">
-                    {/* SUBMIT BUTTON SETTINGS VIEW */}
-                    {isSubmitButtonSelected ? (
-                      <div className="space-y-4 animate-in fade-in duration-200">
-                        {/* Submit Button Text (Label) */}
-                        <div className="space-y-1">
-                          <label className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-700">
-                            BUTTON LABEL
-                          </label>
-                          <input
-                            type="text"
-                            value={form.submitButtonText || "Submit"}
-                            onChange={(e) => setForm({ ...form, submitButtonText: e.target.value })}
-                            placeholder="e.g. Submit, Book Consultation"
-                            className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200/80 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 font-bold text-[#181e25]"
-                          />
-                        </div>
+            {/* RIGHT PALETTE / FIELD SETTINGS SIDEBAR (5 cols) */}
+            <div className="lg:col-span-5 space-y-4">
+              {/* Tab Selector: Add Fields vs Settings */}
+              <div className="bg-white rounded-2xl p-1 border border-slate-200 flex items-center gap-1 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setActiveSidebarTab("add_fields")}
+                  className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${activeSidebarTab === "add_fields"
+                    ? "bg-[#181e25] text-white shadow-xs"
+                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                    }`}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Fields</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSidebarTab("field_settings")}
+                  className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${activeSidebarTab === "field_settings"
+                    ? "bg-[#181e25] text-white shadow-xs"
+                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                    }`}
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  <span>Settings</span>
+                </button>
+              </div>
 
-                        {/* Success Message */}
-                        <div className="space-y-1">
-                          <label className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-700">
-                            SUCCESS CONFIRMATION MESSAGE
-                          </label>
-                          <textarea
-                            rows={3}
-                            value={form.successMessage || "Thank you for your submission!"}
-                            onChange={(e) => setForm({ ...form, successMessage: e.target.value })}
-                            className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200/80 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 text-[#181e25]"
-                          />
-                        </div>
+              {/* TAB 1: ADD FIELDS PALETTE */}
+              {activeSidebarTab === "add_fields" && (
+                <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-4">
+                  <div className="space-y-3">
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Drag a field to any section on the canvas or click to add directly.
+                    </p>
 
-                        {/* Redirect URL */}
-                        <div className="space-y-1">
-                          <label className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-700">
-                            REDIRECT URL (OPTIONAL)
-                          </label>
-                          <input
-                            type="url"
-                            value={form.redirectUrl || ""}
-                            onChange={(e) => setForm({ ...form, redirectUrl: e.target.value })}
-                            placeholder="https://yourwebsite.com/thank-you"
-                            className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200/80 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 text-[#181e25]"
-                          />
-                        </div>
+                    {/* Standard Fields 2-Column Grid */}
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {PALETTE_ITEMS.map((item) => {
+                        const Icon = item.icon;
+                        const isSectionBreak = item.type === "section_break";
 
-                        {/* Auto-create Client */}
-                        <label className="flex items-center gap-2 pt-1 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={form.autoCreateClient ?? true}
-                            onChange={(e) => setForm({ ...form, autoCreateClient: e.target.checked })}
-                            className="w-4 h-4 rounded border-slate-300 text-[#1456f0] focus:ring-[#1456f0]"
-                          />
-                          <span className="text-xs font-semibold text-slate-700">
-                            Auto-create client profile in CRM upon submission
-                          </span>
-                        </label>
-                      </div>
-                    ) : !selectedField ? (
-                      <div className="py-14 text-center space-y-2">
-                        <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-                          <Type className="w-4 h-4" />
-                        </div>
-                        <p className="text-xs font-semibold text-slate-600">
-                          No field selected
-                        </p>
-                        <p className="text-[11px] text-slate-400 max-w-[180px] mx-auto">
-                          Click any field on the canvas or click the Submit Button to configure properties.
-                        </p>
-                      </div>
-                    ) : (
-                      /* FIELD SETTINGS VIEW */
-                      <div className="space-y-3.5">
-                        {/* Field Label */}
-                        <div className="space-y-1">
-                          <label className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-700">
-                            FIELD LABEL
-                          </label>
-                          <input
-                            type="text"
-                            value={selectedField.label}
-                            onChange={(e) =>
-                              handleUpdateSelectedField({
-                                label: e.target.value,
-                              })
-                            }
-                            className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200/80 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 font-semibold text-[#181e25]"
-                          />
-                        </div>
-
-                        {/* Field Key (API Variable) */}
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <label className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-700">
-                              FIELD KEY (API VARIABLE)
-                            </label>
-                            <span className="text-[10px] text-slate-400">
-                              Used in Webhooks
-                            </span>
-                          </div>
-                          <input
-                            type="text"
-                            value={selectedField.name}
-                            onChange={(e) =>
-                              handleUpdateSelectedField({
-                                name: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_"),
-                              })
-                            }
-                            className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200/80 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 font-mono text-[#181e25]"
-                          />
-                        </div>
-
-                        {/* Description (Optional) */}
-                        <div className="space-y-1">
-                          <label className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-700">
-                            DESCRIPTION / HELPER TEXT
-                          </label>
-                          <input
-                            type="text"
-                            value={selectedField.helperText || ""}
-                            onChange={(e) =>
-                              handleUpdateSelectedField({
-                                helperText: e.target.value,
-                              })
-                            }
-                            placeholder="Add a helper description"
-                            className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200/80 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 text-[#181e25]"
-                          />
-                        </div>
-
-                        {/* Placeholder */}
-                        <div className="space-y-1">
-                          <label className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-700">
-                            PLACEHOLDER
-                          </label>
-                          <input
-                            type="text"
-                            value={selectedField.placeholder || ""}
-                            onChange={(e) =>
-                              handleUpdateSelectedField({
-                                placeholder: e.target.value,
-                              })
-                            }
-                            placeholder="Placeholder text..."
-                            className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200/80 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 text-[#181e25]"
-                          />
-                        </div>
-
-                        {/* Required Field Checkbox */}
-                        <label className="flex items-center gap-2 pt-0.5 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedField.isRequired}
-                            onChange={(e) =>
-                              handleUpdateSelectedField({
-                                isRequired: e.target.checked,
-                              })
-                            }
-                            className="w-4 h-4 rounded border-slate-300 text-[#1456f0] focus:ring-[#1456f0]"
-                          />
-                          <span className="text-xs font-semibold text-slate-700">
-                            Required Field
-                          </span>
-                        </label>
-
-                        {/* Options Editor for Select / Radio / Checkbox */}
-                        {(selectedField.type === "select" ||
-                          selectedField.type === "radio" ||
-                          selectedField.type === "checkbox") && (
-                            <div className="space-y-2 pt-2 border-t border-slate-100">
-                              <label className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-700">
-                                OPTIONS
-                              </label>
-                              <div className="space-y-1.5">
-                                {(selectedField.options || []).map((opt, idx) => (
-                                  <div key={idx} className="flex items-center gap-2">
-                                    <input
-                                      type="text"
-                                      value={opt.label}
-                                      onChange={(e) => {
-                                        const nextOptions = [...(selectedField.options || [])];
-                                        nextOptions[idx] = {
-                                          label: e.target.value,
-                                          value: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "_"),
-                                        };
-                                        handleUpdateSelectedField({ options: nextOptions });
-                                      }}
-                                      className="flex-1 px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none"
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const nextOptions = (selectedField.options || []).filter(
-                                          (_, i) => i !== idx
-                                        );
-                                        handleUpdateSelectedField({ options: nextOptions });
-                                      }}
-                                      className="p-1 text-slate-400 hover:text-rose-600 transition-colors"
-                                    >
-                                      <X className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                ))}
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const nextOptions = [
-                                      ...(selectedField.options || []),
-                                      {
-                                        label: `Option ${(selectedField.options?.length || 0) + 1}`,
-                                        value: `opt_${(selectedField.options?.length || 0) + 1}`,
-                                      },
-                                    ];
-                                    handleUpdateSelectedField({ options: nextOptions });
-                                  }}
-                                  className="text-xs font-bold text-[#1456f0] hover:underline flex items-center gap-1 pt-1"
-                                >
-                                  <Plus className="w-3.5 h-3.5" /> Add Option
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                        {/* Validation Rules */}
-                        <div className="space-y-2.5 pt-2.5 border-t border-slate-100">
-                          <label className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-700">
-                            VALIDATION RULES
-                          </label>
-                          <div className="space-y-2">
-                            <div>
-                              <span className="text-[10.5px] font-semibold text-slate-600 block mb-1">
-                                Minimum Characters
-                              </span>
-                              <input
-                                type="text"
-                                value={selectedField.minCharacters ?? ""}
-                                onChange={(e) =>
-                                  handleUpdateSelectedField({
-                                    minCharacters: e.target.value,
-                                  })
-                                }
-                                placeholder="No minimum"
-                                className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200/80 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 text-[#181e25]"
-                              />
-                            </div>
-
-                            <div>
-                              <span className="text-[10.5px] font-semibold text-slate-600 block mb-1">
-                                Maximum Characters
-                              </span>
-                              <input
-                                type="text"
-                                value={selectedField.maxCharacters ?? ""}
-                                onChange={(e) =>
-                                  handleUpdateSelectedField({
-                                    maxCharacters: e.target.value,
-                                  })
-                                }
-                                placeholder="No maximum"
-                                className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200/80 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 text-[#181e25]"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Conditional Logic */}
-                        <div className="space-y-2 pt-2.5 border-t border-slate-100">
-                          <label className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-700">
-                            CONDITIONAL LOGIC
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedField.conditionalLogic?.enabled ?? false}
-                              onChange={(e) =>
-                                handleUpdateSelectedField({
-                                  conditionalLogic: {
-                                    ...(selectedField.conditionalLogic || {}),
-                                    enabled: e.target.checked,
-                                  },
-                                })
+                        return (
+                          <div
+                            key={item.type}
+                            draggable={!isSectionBreak}
+                            onDragStart={(e) => handleDragStartFromStandardPalette(e, item.type)}
+                            onClick={() => {
+                              if (isSectionBreak) {
+                                handleAddSection();
+                              } else {
+                                handleAddField(item.type);
                               }
-                              className="w-4 h-4 rounded border-slate-300 text-[#1456f0] focus:ring-[#1456f0]"
-                            />
-                            <span className="text-xs text-slate-600">
-                              This field depends on another field's value
+                            }}
+                            className={`p-3 rounded-2xl border transition-all cursor-grab active:cursor-grabbing group shadow-2xs flex flex-col items-center justify-center text-center select-none ${isSectionBreak
+                              ? "border-blue-200 bg-blue-50/50 hover:bg-blue-100/60 hover:border-blue-300"
+                              : "border-slate-200/90 bg-white hover:border-[#1456f0] hover:bg-blue-50/40"
+                              }`}
+                          >
+                            <Icon className={`w-4 h-4 mb-1.5 transition-colors ${isSectionBreak ? "text-[#1456f0]" : "text-slate-500 group-hover:text-[#1456f0]"
+                              }`} />
+                            <span className="font-semibold text-[11px] leading-tight text-[#181e25]">
+                              {item.label}
                             </span>
-                          </label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-                          {selectedField.conditionalLogic?.enabled && (
-                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs mt-2">
-                              <select
-                                value={selectedField.conditionalLogic?.dependsOnFieldId || ""}
-                                onChange={(e) =>
-                                  handleUpdateSelectedField({
-                                    conditionalLogic: {
-                                      ...(selectedField.conditionalLogic || {}),
-                                      dependsOnFieldId: e.target.value,
-                                    },
-                                  })
-                                }
-                                className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
-                              >
-                                <option value="">Select dependent field...</option>
-                                {allFields
-                                  .filter((f) => f.id !== selectedField.id)
-                                  .map((f) => (
-                                    <option key={f.id} value={f.id}>
-                                      {f.label} ({f.name})
-                                    </option>
-                                  ))}
-                              </select>
+                  {/* DIVIDER */}
+                  <div className="pt-2 border-t border-slate-200/80" />
 
-                              <input
-                                type="text"
-                                value={selectedField.conditionalLogic?.value || ""}
-                                onChange={(e) =>
-                                  handleUpdateSelectedField({
-                                    conditionalLogic: {
-                                      ...(selectedField.conditionalLogic || {}),
-                                      value: e.target.value,
-                                    },
-                                  })
-                                }
-                                placeholder="Equals value (e.g. Yes)"
-                                className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
-                              />
+                  {/* UNIFIED SELECT FIELD DROPDOWN */}
+                  <div className="rounded-2xl border border-slate-200/90 bg-white overflow-hidden shadow-2xs transition-all">
+                    {/* Header */}
+                    <button
+                      type="button"
+                      onClick={() => setIsSelectFieldDropdownOpen(!isSelectFieldDropdownOpen)}
+                      className={`w-full flex items-center justify-between p-3.5 transition-colors font-bold text-xs ${isSelectFieldDropdownOpen
+                        ? "bg-slate-100/90 text-[#181e25] border-b border-slate-200"
+                        : "bg-slate-50 hover:bg-slate-100/80 text-slate-800"
+                        }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-lg bg-blue-50 text-[#1456f0] flex items-center justify-center shadow-2xs">
+                          <Database className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="font-bold">Select Field</span>
+                        <span className="px-1.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700 font-mono text-[10px]">
+                          {availableIndustryFields.length}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-400">
+                        <span className="text-[11px] font-normal text-slate-500">
+                          {isSelectFieldDropdownOpen ? "Collapse" : "Expand"}
+                        </span>
+                        {isSelectFieldDropdownOpen ? (
+                          <ChevronDown className="w-4 h-4 text-slate-600" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-slate-500" />
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Dropdown Content */}
+                    {isSelectFieldDropdownOpen && (
+                      <div className="p-3 bg-slate-50/50 space-y-2.5 animate-in fade-in duration-150">
+                        {/* Search Input */}
+                        <div className="relative">
+                          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            value={fieldSearchQuery}
+                            onChange={(e) => setFieldSearchQuery(e.target.value)}
+                            placeholder="Search all fields..."
+                            className="w-full pl-8 pr-7 py-2 text-xs bg-white border border-slate-200/90 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 placeholder:text-slate-400 text-[#181e25]"
+                          />
+                          {fieldSearchQuery && (
+                            <button
+                              type="button"
+                              onClick={() => setFieldSearchQuery("")}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Industry scope filter banner */}
+                        <div className="flex items-center justify-between text-[10.5px] bg-white p-1.5 rounded-lg border border-slate-200">
+                          <span className="text-slate-500 truncate">
+                            Scope: <strong className="text-[#1456f0]">{form.industryName || "General"}</strong>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setIndustryFilterMode(
+                                industryFilterMode === "assigned" ? "all" : "assigned"
+                              )
+                            }
+                            className="text-[10px] font-bold text-[#1456f0] hover:underline cursor-pointer"
+                          >
+                            {industryFilterMode === "assigned" ? "Show All Industries" : "Filter to Industry"}
+                          </button>
+                        </div>
+
+                        {/* Module Accordions */}
+                        <div className="space-y-2">
+                          {moduleList.length === 0 ? (
+                            <div className="py-6 text-center text-slate-400 text-xs">
+                              No matching fields found.
                             </div>
+                          ) : (
+                            moduleList.map((moduleName) => {
+                              const fieldsInModule = groupedFieldsByModule[moduleName] || [];
+                              const isOpen = !!openModuleDropdowns[moduleName];
+
+                              return (
+                                <div
+                                  key={moduleName}
+                                  className="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-2xs"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleModuleDropdown(moduleName)}
+                                    className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-[#181e25] transition-colors text-xs font-bold cursor-pointer"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span>{moduleName}</span>
+                                      <span className="text-[10px] text-slate-400 font-mono font-normal">
+                                        ({fieldsInModule.length})
+                                      </span>
+                                    </div>
+                                    <div className="text-slate-400">
+                                      {isOpen ? (
+                                        <ChevronDown className="w-3.5 h-3.5" />
+                                      ) : (
+                                        <ChevronRight className="w-3.5 h-3.5" />
+                                      )}
+                                    </div>
+                                  </button>
+
+                                  {isOpen && (
+                                    <div className="p-2 border-t border-slate-100 bg-slate-50/50 space-y-1.5 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                      {fieldsInModule.map((fieldItem) => (
+                                        <div
+                                          key={fieldItem.id}
+                                          draggable
+                                          onDragStart={(e) => handleDragStartFromPredefined(e, fieldItem)}
+                                          onClick={() => handleAddPredefinedField(fieldItem)}
+                                          className="px-2.5 py-2 rounded-lg bg-white hover:bg-blue-50/70 border border-slate-200/70 hover:border-blue-300 transition-all cursor-grab active:cursor-grabbing group shadow-2xs flex items-center justify-between gap-2"
+                                        >
+                                          <span className="text-xs font-semibold text-[#181e25] truncate">
+                                            {fieldItem.label}
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleAddPredefinedField(fieldItem);
+                                            }}
+                                            className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-[#1456f0] transition-colors shrink-0"
+                                            title="Add to form"
+                                          >
+                                            <Plus className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })
                           )}
                         </div>
                       </div>
                     )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* TAB 2: SETTINGS (Context-sensitive: Section vs Field vs Submit Button) */}
+              {activeSidebarTab === "field_settings" && (
+                <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
+                  {/* Case 1: Submit Button Selected */}
+                  {isSubmitButtonSelected ? (
+                    <div className="space-y-4">
+                      <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700">
+                        Submit Button Settings
+                      </h4>
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                          Button Text
+                        </label>
+                        <input
+                          type="text"
+                          value={form.submitButtonText || ""}
+                          onChange={(e) => setForm({ ...form, submitButtonText: e.target.value })}
+                          className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 text-[#181e25]"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                          Success Message
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={form.successMessage || ""}
+                          onChange={(e) => setForm({ ...form, successMessage: e.target.value })}
+                          className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 text-[#181e25] resize-none"
+                        />
+                      </div>
+                    </div>
+                  ) : selectedSection ? (
+                    <div className="space-y-4">
+                      {/* Case 2: Section Selected */}
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700">
+                          Section Settings
+                        </h4>
+                        <span className="text-[10px] font-mono px-2 py-0.5 bg-blue-50 text-[#1456f0] rounded font-bold uppercase">
+                          Section Container
+                        </span>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                          Section Title *
+                        </label>
+                        <input
+                          type="text"
+                          value={selectedSection.title}
+                          onChange={(e) =>
+                            handleUpdateSection(selectedSection.id, { title: e.target.value })
+                          }
+                          placeholder="e.g. Medical History, Insurance Details"
+                          className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 text-[#181e25]"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                          Section Description / Subtitle
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={selectedSection.description || ""}
+                          onChange={(e) =>
+                            handleUpdateSection(selectedSection.id, { description: e.target.value })
+                          }
+                          placeholder="Provide optional helper instructions for this section..."
+                          className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 text-[#181e25] resize-none"
+                        />
+                      </div>
+                    </div>
+                  ) : selectedField ? (
+                    <div className="space-y-4">
+                      {/* Case 3: Field Selected */}
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700">
+                          Field Properties
+                        </h4>
+                        <span className="text-[10px] font-mono px-2 py-0.5 bg-blue-50 text-[#1456f0] rounded font-bold uppercase">
+                          {selectedField.type}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                          Field Label *
+                        </label>
+                        <input
+                          type="text"
+                          value={selectedField.label}
+                          onChange={(e) => handleUpdateSelectedField({ label: e.target.value })}
+                          className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 text-[#181e25]"
+                        />
+                      </div>
+
+                      {/* Only show placeholder for text/email/phone/number/textarea */}
+                      {["text", "email", "phone", "number", "textarea"].includes(selectedField.type) && (
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                            Placeholder
+                          </label>
+                          <input
+                            type="text"
+                            value={selectedField.placeholder || ""}
+                            onChange={(e) =>
+                              handleUpdateSelectedField({ placeholder: e.target.value })
+                            }
+                            className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 text-[#181e25]"
+                          />
+                        </div>
+                      )}
+
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                          Helper Text
+                        </label>
+                        <input
+                          type="text"
+                          value={selectedField.helperText || ""}
+                          onChange={(e) =>
+                            handleUpdateSelectedField({ helperText: e.target.value })
+                          }
+                          className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#1456f0]/40 text-[#181e25]"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        <span className="text-xs font-semibold text-slate-700">Required Field</span>
+                        <input
+                          type="checkbox"
+                          checked={selectedField.isRequired || false}
+                          onChange={(e) =>
+                            handleUpdateSelectedField({ isRequired: e.target.checked })
+                          }
+                          className="w-4 h-4 text-[#1456f0] rounded focus:ring-0 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-8 text-center text-slate-400 text-xs">
+                      Select a section or field on the canvas to configure its settings.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
+        </div>
+
+        {/* 4. STICKY BOTTOM FOOTER */}
+        <div className="px-6 py-4 bg-white border-t border-slate-200 flex items-center justify-between shrink-0 shadow-xs">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition-all cursor-pointer"
+          >
+            Cancel
+          </button>
+
+          <Pill
+            variant="navy"
+            size="md"
+            icon={<Check className="w-4 h-4 text-emerald-400" />}
+            onClick={handleSave}
+          >
+            Save Web Form
+          </Pill>
         </div>
       </div>
     </div>

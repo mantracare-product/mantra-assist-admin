@@ -24,16 +24,77 @@ export interface IndustryOption {
   icon: string;
 }
 
+export const HEALTHCARE_INDUSTRIES = [
+  "Cardiologist",
+  "Dentist",
+  "Dermatologist",
+  "Diagnostics",
+  "Endocrinologist",
+  "ENT Specialist",
+  "Fertility/IVF Specialist",
+  "Gastroenterologist",
+  "General Physician",
+  "General Surgery",
+  "Gynecologist",
+  "Nephrologist",
+  "Neurosurgeon",
+  "Nutrition",
+  "Oncologist",
+  "Ophthalmologist",
+  "Orthopedic",
+  "Pediatrician",
+  "Pulmonologist (Lung)",
+  "Rheumatologist",
+  "Sexologist",
+  "Therapist",
+  "Psychiatrist",
+  "Urologist",
+];
+
 export const AVAILABLE_INDUSTRIES_LIST: IndustryOption[] = [
-  { id: 'ind-general', name: 'General / Universal', category: 'Cross-Industry', icon: 'Briefcase' },
-  { id: 'ind-dental', name: 'Dental Practice', category: 'Healthcare & Medical', icon: 'Stethoscope' },
-  { id: 'ind-cardio', name: 'Cardiology Specialist', category: 'Healthcare & Medical', icon: 'Activity' },
-  { id: 'ind-legal', name: 'Personal Injury Law', category: 'Legal & Professional', icon: 'Scale' },
-  { id: 'ind-realestate', name: 'Residential Real Estate', category: 'Real Estate & Property', icon: 'Home' },
-  { id: 'ind-hvac', name: 'HVAC & Home Services', category: 'Home Services & Contracting', icon: 'Wrench' },
-  { id: 'ind-auto', name: 'Auto Dealership & Service', category: 'Automotive & Transport', icon: 'Car' },
-  { id: 'ind-tech', name: 'SaaS / IT Consulting', category: 'IT & Cloud Services', icon: 'Cpu' },
-  { id: 'ind-coaching', name: 'Executive Coaching', category: 'Coaching & Advisory', icon: 'Sparkles' },
+  // Healthcare (24 industries)
+  ...HEALTHCARE_INDUSTRIES.map((name) => ({
+    id: `ind-${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+    name,
+    category: 'Healthcare',
+    icon: 'Stethoscope',
+  })),
+
+  // Automobile
+  { id: 'ind-auto-custom', name: 'Accessory/Customization', category: 'Automobile', icon: 'Car' },
+  { id: 'ind-auto-dealership', name: 'Auto Dealership & Service', category: 'Automobile', icon: 'Car' },
+  { id: 'ind-auto-ev', name: 'Electric Vehicle (EV) Specialization', category: 'Automobile', icon: 'Car' },
+  { id: 'ind-auto-fleet', name: 'Fleet Maintenance & Servicing', category: 'Automobile', icon: 'Car' },
+
+  // Coaching & Advisory
+  { id: 'ind-coaching-career', name: 'Career Coaching', category: 'Coaching & Advisory', icon: 'Sparkles' },
+  { id: 'ind-coaching-exec', name: 'Executive Leadership Mentorship', category: 'Coaching & Advisory', icon: 'Sparkles' },
+  { id: 'ind-coaching-life', name: 'Life & Wellness Coaching', category: 'Coaching & Advisory', icon: 'Sparkles' },
+
+  // Household Care
+  { id: 'ind-household-plumbing', name: 'Plumbing & Water Systems', category: 'Household Care', icon: 'Wrench' },
+  { id: 'ind-household-electrical', name: 'Electrical & Smart Home Installation', category: 'Household Care', icon: 'Wrench' },
+  { id: 'ind-household-hvac', name: 'HVAC & Air Conditioning Repair', category: 'Household Care', icon: 'Wrench' },
+  { id: 'ind-household-cleaning', name: 'Home Deep Cleaning', category: 'Household Care', icon: 'Wrench' },
+
+  // IT/Tech
+  { id: 'ind-tech-ai', name: 'AI/ML Strategy/ Model Development', category: 'IT/Tech', icon: 'Cpu' },
+  { id: 'ind-tech-app', name: 'App Development', category: 'IT/Tech', icon: 'Cpu' },
+  { id: 'ind-tech-automation', name: 'Automation/Workflow Consultation', category: 'IT/Tech', icon: 'Cpu' },
+  { id: 'ind-tech-chatbot', name: 'Chatbot/Voice Agent Development', category: 'IT/Tech', icon: 'Cpu' },
+  { id: 'ind-tech-cloud', name: 'Cloud Migration Consultation', category: 'IT/Tech', icon: 'Cpu' },
+  { id: 'ind-tech-cyber', name: 'Cybersecurity Assessment', category: 'IT/Tech', icon: 'Cpu' },
+  { id: 'ind-tech-data', name: 'Data/Infrastructure Audit', category: 'IT/Tech', icon: 'Cpu' },
+
+  // Real Estate
+  { id: 'ind-realestate-res', name: 'Residential Real Estate Brokerage', category: 'Real Estate', icon: 'Home' },
+  { id: 'ind-realestate-comm', name: 'Commercial Property Leasing', category: 'Real Estate', icon: 'Home' },
+  { id: 'ind-realestate-mgmt', name: 'Property Management & HOA', category: 'Real Estate', icon: 'Home' },
+
+  // Wellness & Lifestyle
+  { id: 'ind-wellness-fitness', name: 'Fitness & Personal Training', category: 'Wellness & Lifestyle', icon: 'Activity' },
+  { id: 'ind-wellness-nutrition', name: 'Holistic Nutrition & Dietetics', category: 'Wellness & Lifestyle', icon: 'Activity' },
+  { id: 'ind-wellness-yoga', name: 'Yoga & Mindfulness Studio', category: 'Wellness & Lifestyle', icon: 'Activity' },
 ];
 
 // ==========================================
